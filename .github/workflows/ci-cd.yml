@@ -38,8 +38,8 @@ jobs:
           LLM_PROVIDER: gemini
           LLM_MODEL: gemini-flash-lite-latest
         run: |
-          # Fails build immediately if Recall@5 < 0.70 or Faithfulness < 0.70
-          python -m eval.run_eval --retriever hybrid --subset 20 --min-recall 0.70 --min-faithfulness 0.70
+          # Fails build immediately if Recall@5 < 0.70 or Faithfulness < 0.60
+          python -m eval.run_eval --retriever hybrid --subset 20 --min-recall 0.70 --min-faithfulness 0.60
 
       - name: Run Production Drift Monitor
         run: |

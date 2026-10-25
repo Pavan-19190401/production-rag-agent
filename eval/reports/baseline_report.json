@@ -1,27 +1,27 @@
 {
   "summary": {
     "benchmark_name": "baseline_report",
-    "timestamp": "2026-10-25 14:56:53",
-    "total_evaluated": 65,
-    "answerable_count": 55,
-    "unanswerable_count": 10,
+    "timestamp": "2026-10-25 15:40:36",
+    "total_evaluated": 20,
+    "answerable_count": 20,
+    "unanswerable_count": 0,
     "top_k": 5,
     "metrics": {
-      "recall_at_k": 0.4727,
-      "mrr": 0.3027,
-      "ndcg_at_k": 0.3328,
-      "context_precision": 0.1018,
-      "context_recall": 0.4455,
-      "faithfulness": 0.8831,
-      "answer_relevance": 0.8331,
-      "answer_correctness": 0.2829,
-      "hallucination_rate": 0.1169,
-      "refusal_accuracy": 0.6
+      "recall_at_k": 1.0,
+      "mrr": 0.8667,
+      "ndcg_at_k": 0.8701,
+      "context_precision": 0.22,
+      "context_recall": 0.975,
+      "faithfulness": 0.9146,
+      "answer_relevance": 0.934,
+      "answer_correctness": 0.4062,
+      "hallucination_rate": 0.0854,
+      "refusal_accuracy": 0.0
     },
     "latency_ms": {
-      "p50": 8.28,
-      "p95": 10.11,
-      "mean": 8.26
+      "p50": 7.32,
+      "p95": 10.45,
+      "mean": 7.65
     }
   },
   "details": [
@@ -31,14 +31,14 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0",
-        "flash_attention.md_p1_Abstract_c0",
         "flash_attention.md_p1_Experimental_Results_c0",
-        "flash_attention.md_p1_c0",
-        "lora_paper.pdf_p3_c2"
+        "flash_attention.md_p1_Abstract_c0",
+        "lora_paper.pdf_p17_Page_17_c0",
+        "flash_attention.md_p1_Tiling_Algorithm_c0"
       ],
       "gold_chunk_ids": [
-        "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0",
-        "flash_attention.md_p1_Abstract_c0"
+        "flash_attention.md_p1_Abstract_c0",
+        "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0"
       ],
       "hit_at_k": true,
       "first_rank": 1,
@@ -46,7 +46,7 @@
       "faithfulness": 0.9230769230769231,
       "relevance": 0.8571428571428571,
       "correctness": 0.13953488372093023,
-      "latency_ms": 8.782500000052096
+      "latency_ms": 8.115399999951478
     },
     {
       "id": "q_002",
@@ -56,8 +56,8 @@
         "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0",
         "flash_attention.md_p1_Abstract_c0",
         "lora_paper.pdf_p3_Page_3_c2",
-        "lora_paper.pdf_p3_c2",
-        "lora_paper.pdf_p5_c2"
+        "lora_paper.pdf_p17_Page_17_c0",
+        "flash_attention.md_p1_Tiling_Algorithm_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0"
@@ -68,118 +68,118 @@
       "faithfulness": 0.95,
       "relevance": 1.0,
       "correctness": 0.6101694915254238,
-      "latency_ms": 9.33549999990646
+      "latency_ms": 8.275299998786068
     },
     {
       "id": "q_003",
       "question": "How does FlashAttention compute exact attention without storing the full N x N matrix in HBM?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
-        "flash_attention.md_p1_c0",
-        "flash_attention.md_p1_Experimental_Results_c0",
         "flash_attention.md_p1_Tiling_Algorithm_c0",
-        "flash_attention.md_p1_Abstract_c0"
+        "flash_attention.md_p1_Abstract_c0",
+        "flash_attention.md_p1_Experimental_Results_c0",
+        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
+        "attention_paper.pdf_p4_Page_4_c0"
       ],
       "gold_chunk_ids": [
-        "flash_attention.md_p1_Tiling_Algorithm_c0",
-        "flash_attention.md_p1_Online_Softmax_Formulati_c0"
+        "flash_attention.md_p1_Online_Softmax_Formulati_c0",
+        "flash_attention.md_p1_Tiling_Algorithm_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 4,
+      "first_rank": 1,
       "answer": "FlashAttention computes exact softmax without storing the full $N \\times N$ matrix in HBM by using tiling. [flash_attention.md, page 1]",
       "faithfulness": 0.9230769230769231,
       "relevance": 1.0,
       "correctness": 0.43137254901960786,
-      "latency_ms": 9.642300000450632
+      "latency_ms": 7.147300000724499
     },
     {
       "id": "q_004",
       "question": "What speedup does FlashAttention achieve over standard PyTorch attention?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "flash_attention.md_p1_c0",
         "flash_attention.md_p1_Experimental_Results_c0",
-        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
         "flash_attention.md_p1_Abstract_c0",
-        "lora_paper.pdf_p3_c2"
+        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
+        "flash_attention.md_p1_Tiling_Algorithm_c0",
+        "lora_paper.pdf_p5_Page_5_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_Experimental_Results_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 2,
+      "first_rank": 1,
       "answer": "FlashAttention achieves:\n- 2x to 4x wall-clock speedup over standard PyTorch attention for sequence lengths from 128 to 4096. [flash_attention.md, page 1]",
       "faithfulness": 0.9285714285714286,
       "relevance": 1.0,
       "correctness": 0.8780487804878049,
-      "latency_ms": 8.999100000437465
+      "latency_ms": 6.312100000286591
     },
     {
       "id": "q_005",
       "question": "Does FlashAttention sacrifice mathematical precision compared to standard attention?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "flash_attention.md_p1_c0",
         "flash_attention.md_p1_Experimental_Results_c0",
-        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
         "flash_attention.md_p1_Abstract_c0",
-        "attention_paper.pdf_p4_Page_4_c0"
+        "flash_attention.md_p1_FlashAttention__Fast_and_c0",
+        "attention_paper.pdf_p9_Page_9_c0",
+        "flash_attention.md_p1_Tiling_Algorithm_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_Experimental_Results_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 2,
+      "first_rank": 1,
       "answer": "- Exact equivalence: FlashAttention produces exact attention weights with zero loss in mathematical precision compared to standard attention. [flash_attention.md, page 1]",
       "faithfulness": 0.9333333333333333,
       "relevance": 1.0,
       "correctness": 0.8235294117647058,
-      "latency_ms": 6.678099999589904
+      "latency_ms": 6.668600000921288
     },
     {
       "id": "q_006",
       "question": "What maximum context length can FlashAttention scale to on a single GPU without memory exhaustion?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "flash_attention.md_p1_c0",
         "flash_attention.md_p1_Experimental_Results_c0",
         "flash_attention.md_p1_Abstract_c0",
-        "lora_paper.pdf_p3_c2",
-        "lora_paper.pdf_p3_Page_3_c2"
+        "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0",
+        "lora_paper.pdf_p3_Page_3_c2",
+        "flash_attention.md_p1_Tiling_Algorithm_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_Experimental_Results_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 2,
+      "first_rank": 1,
       "answer": "- Enables context lengths up to 64k tokens on single GPUs without memory exhaustion. [flash_attention.md, page 1]",
       "faithfulness": 0.9090909090909091,
       "relevance": 0.9230769230769231,
       "correctness": 0.8387096774193549,
-      "latency_ms": 7.211900000584137
+      "latency_ms": 6.969399999434245
     },
     {
       "id": "q_007",
       "question": "What is the time and memory complexity of standard self-attention relative to sequence length?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p6_c1",
         "attention_paper.pdf_p6_Page_6_c1",
+        "attention_paper.pdf_p6_Page_6_c0",
         "attention_paper.pdf_p2_Page_2_c1",
-        "attention_paper.pdf_p2_c1",
-        "attention_paper.pdf_p6_c0"
+        "flash_attention.md_p1_Abstract_c0",
+        "attention_paper.pdf_p7_Page_7_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_Abstract_c0"
       ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Layer Type Complexity per Layer Sequential Maximum Path Length Operations Self-Attention O(n2 · d) O(1) O(1) Recurrent O(n · d2) O(n) O(n) Convolutional O(k · n · d2) O(1) O(logk(n)) Self-Attention (restricted) O(r · n · d) O(1) O(n/r) 3.5 Positional Encoding Since our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence, we must inject some information about the relative or absolute position of the tokens in the sequence. [attention_paper.pdf, page 6]",
-      "faithfulness": 0.9545454545454546,
+      "hit_at_k": true,
+      "first_rank": 4,
+      "answer": "Transformers are slow and memory-intensive on long sequences, since the time and memory complexity of self-attention are quadratic in sequence length. [flash_attention.md, page 1]",
+      "faithfulness": 0.9375,
       "relevance": 1.0,
-      "correctness": 0.2465753424657534,
-      "latency_ms": 7.10479999997915
+      "correctness": 0.6842105263157894,
+      "latency_ms": 6.670999999187188
     },
     {
       "id": "q_008",
@@ -189,8 +189,8 @@
         "flash_attention.md_p1_Tiling_Algorithm_c0",
         "flash_attention.md_p1_Abstract_c0",
         "lora_paper.pdf_p12_Page_12_c0",
-        "lora_paper.pdf_p12_c0",
-        "lora_paper.pdf_p11_c1"
+        "lora_paper.pdf_p11_Page_11_c0",
+        "lora_paper.pdf_p24_Page_24_c0"
       ],
       "gold_chunk_ids": [
         "flash_attention.md_p1_Tiling_Algorithm_c0"
@@ -201,7 +201,7 @@
       "faithfulness": 0.9,
       "relevance": 1.0,
       "correctness": 0.7692307692307692,
-      "latency_ms": 7.158899999922141
+      "latency_ms": 6.563599999935832
     },
     {
       "id": "q_009",
@@ -209,10 +209,10 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "attention_paper.pdf_p4_Page_4_c0",
-        "attention_paper.pdf_p4_c0",
-        "flash_attention.md_p1_Abstract_c0",
+        "attention_paper.pdf_p5_Page_5_c0",
+        "attention_paper.pdf_p4_Page_4_c1",
         "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0"
+        "lora_paper.pdf_p5_Page_5_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p4_Page_4_c0"
@@ -223,96 +223,96 @@
       "faithfulness": 0.8666666666666667,
       "relevance": 1.0,
       "correctness": 0.09523809523809525,
-      "latency_ms": 7.265000000188593
+      "latency_ms": 6.798800000979099
     },
     {
       "id": "q_010",
       "question": "Why do the authors scale the dot products by 1 / sqrt(d_k)?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p4_c1",
-        "attention_paper.pdf_p4_Page_4_c1",
         "attention_paper.pdf_p4_Page_4_c0",
-        "attention_paper.pdf_p4_c0",
-        "lora_paper.pdf_p23_c2"
+        "attention_paper.pdf_p4_Page_4_c1",
+        "lora_paper.pdf_p11_Page_11_c1",
+        "lora_paper.pdf_p4_Page_4_c1",
+        "attention_paper.pdf_p9_Page_9_c1"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p4_Page_4_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 3,
-      "answer": "queries, keys and values we then perform the attention function in parallel, yielding dv-dimensional 4To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. [attention_paper.pdf, page 4]",
-      "faithfulness": 0.9230769230769231,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.2941176470588235,
-      "latency_ms": 7.3413000000073225
+      "first_rank": 1,
+      "answer": "To counteract this effect, we scale the dot products by 1√dk . [attention_paper.pdf, page 4]",
+      "faithfulness": 0.7142857142857143,
+      "relevance": 1.0,
+      "correctness": 0.3255813953488372,
+      "latency_ms": 9.030499999425956
     },
     {
       "id": "q_011",
       "question": "What are the values of d_model, number of heads h, and d_k in the base Transformer model?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
         "attention_paper.pdf_p9_Page_9_c0",
-        "attention_paper.pdf_p9_c0",
-        "attention_paper.pdf_p8_Page_8_c1"
+        "attention_paper.pdf_p8_Page_8_c1",
+        "attention_paper.pdf_p3_Page_3_c0",
+        "attention_paper.pdf_p5_Page_5_c0",
+        "attention_paper.pdf_p8_Page_8_c0"
       ],
       "gold_chunk_ids": [
-        "attention_paper.pdf_p9_Page_9_c0",
-        "attention_paper.pdf_p5_Page_5_c0"
+        "attention_paper.pdf_p5_Page_5_c0",
+        "attention_paper.pdf_p9_Page_9_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 3,
+      "first_rank": 1,
       "answer": "6.2 Model Variations To evaluate the importance of different components of the Transformer, we varied our base model in different ways, measuring the change in performance on English-to-German translation on the 5We used values of 2.8, 3.7, 6.0 and 9.5 TFLOPS for K80, K40, M40 and P100, respectively. [attention_paper.pdf, page 8]",
       "faithfulness": 0.9333333333333333,
       "relevance": 0.9090909090909091,
       "correctness": 0.23333333333333334,
-      "latency_ms": 9.498100000200793
+      "latency_ms": 8.035699998799828
     },
     {
       "id": "q_012",
       "question": "What BLEU score did the Transformer big model achieve on the WMT 2014 English-to-German translation task?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p8_c1",
         "attention_paper.pdf_p8_Page_8_c1",
         "attention_paper.pdf_p8_Page_8_c0",
-        "attention_paper.pdf_p8_c0",
-        "attention_paper.pdf_p10_c0"
+        "attention_paper.pdf_p10_Page_10_c0",
+        "attention_paper.pdf_p1_Page_1_c0",
+        "attention_paper.pdf_p9_Page_9_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p8_Page_8_c1"
       ],
       "hit_at_k": true,
-      "first_rank": 2,
+      "first_rank": 1,
       "answer": "On the WMT 2014 English-to-German translation task, the big transformer model (Transformer (big) in Table 2) outperforms the best previously reported models (including ensembles) by more than 2.0 BLEU, establishing a new state-of-the-art BLEU score of 28.4. [attention_paper.pdf, page 8]",
       "faithfulness": 0.9333333333333333,
       "relevance": 1.0,
       "correctness": 0.6101694915254237,
-      "latency_ms": 9.52789999973902
+      "latency_ms": 9.461200001169345
     },
     {
       "id": "q_013",
       "question": "What positional encoding functions are used in the Transformer?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
-        "attention_paper.pdf_p9_c0",
+        "attention_paper.pdf_p6_Page_6_c0",
         "attention_paper.pdf_p9_Page_9_c0",
-        "attention_paper.pdf_p6_Page_6_c0"
+        "attention_paper.pdf_p8_Page_8_c0",
+        "attention_paper.pdf_p10_Page_10_c0",
+        "attention_paper.pdf_p3_Page_3_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p6_Page_6_c0"
       ],
       "hit_at_k": true,
-      "first_rank": 5,
+      "first_rank": 1,
       "answer": "Layer Type Complexity per Layer Sequential Maximum Path Length Operations Self-Attention O(n2 · d) O(1) O(1) Recurrent O(n · d2) O(n) O(n) Convolutional O(k · n · d2) O(1) O(logk(n)) Self-Attention (restricted) O(r · n · d) O(1) O(n/r) 3.5 Positional Encoding Since our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence, we must inject some information about the relative or absolute position of the tokens in the sequence. [attention_paper.pdf, page 6]",
       "faithfulness": 0.9545454545454546,
       "relevance": 0.6666666666666666,
       "correctness": 0.08108108108108107,
-      "latency_ms": 6.806899999901361
+      "latency_ms": 7.742400001006899
     },
     {
       "id": "q_014",
@@ -320,10 +320,10 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
-        "attention_paper.pdf_p5_c0",
         "attention_paper.pdf_p5_Page_5_c0",
-        "attention_paper.pdf_p6_Page_6_c0"
+        "attention_paper.pdf_p8_Page_8_c0",
+        "attention_paper.pdf_p6_Page_6_c0",
+        "attention_paper.pdf_p6_Page_6_c1"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p3_Page_3_c0"
@@ -334,7 +334,7 @@
       "faithfulness": 0.9166666666666666,
       "relevance": 1.0,
       "correctness": 0.2978723404255319,
-      "latency_ms": 9.296600000197941
+      "latency_ms": 7.32369999968796
     },
     {
       "id": "q_015",
@@ -342,43 +342,43 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "lora_paper.pdf_p5_Page_5_c0",
-        "lora_paper.pdf_p5_c0",
-        "attention_paper.pdf_p8_c1",
+        "attention_paper.pdf_p7_Page_7_c1",
         "attention_paper.pdf_p8_Page_8_c1",
-        "attention_paper.pdf_p3_Page_3_c0"
+        "lora_paper.pdf_p20_Page_20_c0",
+        "attention_paper.pdf_p8_Page_8_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p7_Page_7_c1"
       ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "The Transformer (big) model trained for English-to-French used dropout rate Pdrop = 0.1, instead of 0.3. [attention_paper.pdf, page 8]",
-      "faithfulness": 0.8461538461538461,
-      "relevance": 0.6,
-      "correctness": 0.25925925925925924,
-      "latency_ms": 9.448599999814178
+      "hit_at_k": true,
+      "first_rank": 2,
+      "answer": "Method Dataset MNLI SST-2 MRPC CoLA QNLI QQP RTE STS-B Optimizer AdamW Warmup Ratio 0.1 LR Schedule Linear DeBERTa XXL LoRA Batch Size 8 8 32 4 6 8 4 4 # Epochs 5 16 30 10 8 11 11 10 Learning Rate 1E-04 6E-05 2E-04 1E-04 1E-04 1E-04 2E-04 2E-04 Weight Decay 0 0.01 0.01 0 0.01 0.01 0.01 0.1 CLS Dropout 0.15 0 0 0.1 0.1 0.2 0.2 0.2 LoRA Conﬁg. [lora_paper.pdf, page 20]",
+      "faithfulness": 0.9375,
+      "relevance": 0.8,
+      "correctness": 0.13953488372093023,
+      "latency_ms": 6.99460000032559
     },
     {
       "id": "q_016",
       "question": "What inner dimension d_ff is used in the feed-forward networks of the base Transformer?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p5_c1",
         "attention_paper.pdf_p5_Page_5_c1",
         "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
+        "attention_paper.pdf_p6_Page_6_c0",
+        "attention_paper.pdf_p8_Page_8_c1",
         "lora_paper.pdf_p5_Page_5_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p5_Page_5_c1"
       ],
       "hit_at_k": true,
-      "first_rank": 2,
-      "answer": "connected feed-forward network, which is applied to each position separately and identically. [attention_paper.pdf, page 5]",
-      "faithfulness": 0.8333333333333334,
-      "relevance": 0.4444444444444444,
-      "correctness": 0.29629629629629634,
-      "latency_ms": 9.453300000132003
+      "first_rank": 1,
+      "answer": "6.2 Model Variations To evaluate the importance of different components of the Transformer, we varied our base model in different ways, measuring the change in performance on English-to-German translation on the 5We used values of 2.8, 3.7, 6.0 and 9.5 TFLOPS for K80, K40, M40 and P100, respectively. [attention_paper.pdf, page 8]",
+      "faithfulness": 0.9333333333333333,
+      "relevance": 0.6666666666666666,
+      "correctness": 0.07272727272727272,
+      "latency_ms": 6.938900000022841
     },
     {
       "id": "q_017",
@@ -386,10 +386,10 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
-        "attention_paper.pdf_p5_c0",
         "attention_paper.pdf_p5_Page_5_c0",
-        "attention_paper.pdf_p2_Page_2_c1"
+        "attention_paper.pdf_p2_Page_2_c1",
+        "attention_paper.pdf_p6_Page_6_c1",
+        "attention_paper.pdf_p6_Page_6_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p3_Page_3_c0"
@@ -400,29 +400,29 @@
       "faithfulness": 0.8666666666666667,
       "relevance": 1.0,
       "correctness": 0.1395348837209302,
-      "latency_ms": 8.722600000510283
+      "latency_ms": 6.940999999642372
     },
     {
       "id": "q_018",
       "question": "What dropout rate was applied to the Transformer during training?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p8_c0",
         "attention_paper.pdf_p8_Page_8_c0",
-        "lora_paper.pdf_p20_c0",
+        "attention_paper.pdf_p8_Page_8_c1",
         "lora_paper.pdf_p20_Page_20_c0",
-        "attention_paper.pdf_p8_Page_8_c1"
+        "attention_paper.pdf_p7_Page_7_c1",
+        "lora_paper.pdf_p5_Page_5_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p7_Page_7_c1"
       ],
-      "hit_at_k": false,
-      "first_rank": 0,
+      "hit_at_k": true,
+      "first_rank": 4,
       "answer": "Model BLEU Training Cost (FLOPs) EN-DE EN-FR EN-DE EN-FR ByteNet [18] 23.75 Deep-Att + PosUnk [39] 39.2 1.0 · 1020 GNMT + RL [38] 24.6 39.92 2.3 · 1019 1.4 · 1020 ConvS2S [9] 25.16 40.46 9.6 · 1018 1.5 · 1020 MoE [32] 26.03 40.56 2.0 · 1019 1.2 · 1020 Deep-Att + PosUnk Ensemble [39] 40.4 8.0 · 1020 GNMT + RL Ensemble [38] 26.30 41.16 1.8 · 1020 1.1 · 1021 ConvS2S Ensemble [9] 26.36 41.29 7.7 · 1019 1.2 · 1021 Transformer (base model) 27.3 38.1 3.3 · 1018 Transformer (big) 28.4 41.8 2.3 · 1019 Residual Dropout We apply dropout [33] to the output of each sub-layer, before it is added to the sub-layer input and normalized. [attention_paper.pdf, page 8]",
       "faithfulness": 0.9636363636363636,
       "relevance": 0.8571428571428571,
       "correctness": 0.23655913978494625,
-      "latency_ms": 7.67100000030041
+      "latency_ms": 7.8657000012754
     },
     {
       "id": "q_019",
@@ -430,10 +430,10 @@
       "answerable": true,
       "retrieved_chunk_ids": [
         "attention_paper.pdf_p8_Page_8_c1",
-        "attention_paper.pdf_p8_c1",
-        "attention_paper.pdf_p8_c0",
         "attention_paper.pdf_p8_Page_8_c0",
-        "attention_paper.pdf_p10_c0"
+        "attention_paper.pdf_p10_Page_10_c0",
+        "attention_paper.pdf_p10_Page_10_c1",
+        "attention_paper.pdf_p1_Page_1_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p8_Page_8_c1"
@@ -444,1005 +444,29 @@
       "faithfulness": 0.9333333333333333,
       "relevance": 1.0,
       "correctness": 0.5333333333333333,
-      "latency_ms": 8.840200000122422
+      "latency_ms": 10.446899999806192
     },
     {
       "id": "q_020",
       "question": "What hardware was used to train the base Transformer model and for how long?",
       "answerable": true,
       "retrieved_chunk_ids": [
-        "attention_paper.pdf_p8_c1",
         "attention_paper.pdf_p8_Page_8_c1",
-        "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
+        "attention_paper.pdf_p8_Page_8_c0",
+        "attention_paper.pdf_p7_Page_7_c1",
+        "attention_paper.pdf_p9_Page_9_c0",
         "lora_paper.pdf_p5_Page_5_c0"
       ],
       "gold_chunk_ids": [
         "attention_paper.pdf_p7_Page_7_c1"
       ],
-      "hit_at_k": false,
-      "first_rank": 0,
+      "hit_at_k": true,
+      "first_rank": 3,
       "answer": "6.2 Model Variations To evaluate the importance of different components of the Transformer, we varied our base model in different ways, measuring the change in performance on English-to-German translation on the 5We used values of 2.8, 3.7, 6.0 and 9.5 TFLOPS for K80, K40, M40 and P100, respectively. [attention_paper.pdf, page 8]",
       "faithfulness": 0.9333333333333333,
       "relevance": 1.0,
       "correctness": 0.18461538461538463,
-      "latency_ms": 9.148500000264903
-    },
-    {
-      "id": "q_021",
-      "question": "How does Multi-Head Attention differ from single attention in terms of representation subspaces?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "attention_paper.pdf_p5_c0",
-        "attention_paper.pdf_p5_Page_5_c0",
-        "attention_paper.pdf_p4_Page_4_c0",
-        "attention_paper.pdf_p4_c0",
-        "attention_paper.pdf_p9_c1"
-      ],
-      "gold_chunk_ids": [
-        "attention_paper.pdf_p5_Page_5_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 2,
-      "answer": "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions. [attention_paper.pdf, page 5]",
-      "faithfulness": 0.8666666666666667,
-      "relevance": 1.0,
-      "correctness": 0.8000000000000002,
-      "latency_ms": 10.342500000660948
-    },
-    {
-      "id": "q_022",
-      "question": "What label smoothing value epsilon_ls was applied during Transformer training?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p8_c1",
-        "lora_paper.pdf_p8_Page_8_c1",
-        "attention_paper.pdf_p8_Page_8_c0",
-        "attention_paper.pdf_p8_c0",
-        "lora_paper.pdf_p21_c0"
-      ],
-      "gold_chunk_ids": [
-        "attention_paper.pdf_p8_Page_8_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 3,
-      "answer": "Label Smoothing During training, we employed label smoothing of value ϵls = 0.1 [36]. [attention_paper.pdf, page 8]",
-      "faithfulness": 0.8181818181818182,
-      "relevance": 1.0,
-      "correctness": 0.5714285714285715,
-      "latency_ms": 9.174999999231659
-    },
-    {
-      "id": "q_023",
-      "question": "Can the Transformer model be used without recurrence or convolutions?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "attention_paper.pdf_p3_Page_3_c0",
-        "attention_paper.pdf_p3_c0",
-        "attention_paper.pdf_p2_c0",
-        "attention_paper.pdf_p2_Page_2_c0",
-        "lora_paper.pdf_p5_Page_5_c0"
-      ],
-      "gold_chunk_ids": [
-        "attention_paper.pdf_p2_Page_2_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 4,
-      "answer": "In this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. [attention_paper.pdf, page 2]",
-      "faithfulness": 0.9,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.6666666666666667,
-      "latency_ms": 9.328699999969103
-    },
-    {
-      "id": "q_024",
-      "question": "What are the two core components of a RAG model as introduced by Lewis et al.?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p7_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p2_Page_2_c0",
-        "rag_paper.pdf_p1_Page_1_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "As shown in Figure 1, our models leverage two components: (i) a retriever pη(z|x) with parametersη that returns (top-K truncated) distributions over text passages given a queryx and (ii) a generatorpθ(yi|x,z,y 1:i−1) parametrized 1Code to run experiments with RAG has been open-sourced as part of the HuggingFace Transform- ers Library [66] and can be found at https://github.com/huggingface/transformers/blob/master/ examples/rag/. [rag_paper.pdf, page 2]",
-      "faithfulness": 0.9565217391304348,
-      "relevance": 0.7692307692307693,
-      "correctness": 0.14634146341463417,
-      "latency_ms": 8.089199999631091
-    },
-    {
-      "id": "q_025",
-      "question": "What is the difference between RAG-Sequence and RAG-Token models?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c0",
-        "rag_paper.pdf_p3_c0",
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p17_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c1",
-        "rag_paper.pdf_p3_Page_3_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 1,
-      "answer": "In one approach, RAG-Sequence, the model uses the same document to predict each target token. [rag_paper.pdf, page 3]",
-      "faithfulness": 0.8571428571428571,
-      "relevance": 0.8571428571428571,
-      "correctness": 0.5789473684210527,
-      "latency_ms": 7.882700000664045
-    },
-    {
-      "id": "q_026",
-      "question": "What corpus and chunk size was used for the non-parametric knowledge index in the original RAG paper?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p9_Page_9_c1",
-        "rag_paper.pdf_p9_c1",
-        "rag_paper.pdf_p4_Page_4_c1",
-        "rag_paper.pdf_p4_c1",
-        "rag_paper.pdf_p7_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Index hot-swapping An advantage of non-parametric memory models like RAG is that knowledge [rag_paper.pdf, page 7]",
-      "faithfulness": 0.8461538461538461,
-      "relevance": 0.7142857142857143,
-      "correctness": 0.058823529411764705,
-      "latency_ms": 8.464099999400787
-    },
-    {
-      "id": "q_027",
-      "question": "What indexing tool was used to search the 21 million passages in RAG?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p7_Page_7_c1",
-        "rag_paper.pdf_p7_c1",
-        "rag_paper.pdf_p8_Page_8_c1",
-        "rag_paper.pdf_p8_c1",
-        "rag_paper.pdf_p17_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.0,
-      "correctness": 0.0,
-      "latency_ms": 7.883899999796995
-    },
-    {
-      "id": "q_028",
-      "question": "What pre-trained generator model is used in RAG?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p3_c0",
-        "rag_paper.pdf_p3_Page_3_c0",
-        "rag_paper.pdf_p17_Page_17_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Concretely, the top K documents are retrieved using the retriever, and the generator produces the output sequence probability for each document, which are then marginalized, pRAG-Sequence(y|x) ≈ ∑ z∈top-k(p(·|x)) pη(z|x)pθ(y|x,z ) = ∑ z∈top-k(p(·|x)) pη(z|x) N∏ i pθ(yi|x,z,y 1:i−1) RAG-Token Model In the RAG-Token model we can draw a different latent document for each target token and marginalize accordingly. [rag_paper.pdf, page 3]",
-      "faithfulness": 0.9459459459459459,
-      "relevance": 1.0,
-      "correctness": 0.07017543859649122,
-      "latency_ms": 6.706299999677867
-    },
-    {
-      "id": "q_029",
-      "question": "How did RAG perform on the Natural Questions (NQ) benchmark compared to closed-book models?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c1",
-        "rag_paper.pdf_p4_c1",
-        "rag_paper.pdf_p6_c1",
-        "rag_paper.pdf_p6_Page_6_c1",
-        "rag_paper.pdf_p8_Page_8_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p6_Page_6_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "We also compare to “Closed-Book QA” approaches [52], which, like RAG, generate answers, but which do not exploit retrieval, instead relying purely on parametric knowledge. [rag_paper.pdf, page 4]",
-      "faithfulness": 0.9090909090909091,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.17777777777777778,
-      "latency_ms": 7.893399999375106
-    },
-    {
-      "id": "q_030",
-      "question": "What is the formula for the retrieval probability p(z|x) in RAG?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c0",
-        "rag_paper.pdf_p3_c0",
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p3_Page_3_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 1,
-      "answer": "Concretely, the top K documents are retrieved using the retriever, and the generator produces the output sequence probability for each document, which are then marginalized, pRAG-Sequence(y|x) ≈ ∑ z∈top-k(p(·|x)) pη(z|x)pθ(y|x,z ) = ∑ z∈top-k(p(·|x)) pη(z|x) N∏ i pθ(yi|x,z,y 1:i−1) RAG-Token Model In the RAG-Token model we can draw a different latent document for each target token and marginalize accordingly. [rag_paper.pdf, page 3]",
-      "faithfulness": 0.9459459459459459,
-      "relevance": 1.0,
-      "correctness": 0.1714285714285714,
-      "latency_ms": 8.402000000387488
-    },
-    {
-      "id": "q_031",
-      "question": "How many documents K are retrieved during training and testing in RAG?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c0",
-        "rag_paper.pdf_p3_c0",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p4_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c1"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Concretely, the top K documents are retrieved using the retriever, and the generator produces the output sequence probability for each document, which are then marginalized, pRAG-Sequence(y|x) ≈ ∑ z∈top-k(p(·|x)) pη(z|x)pθ(y|x,z ) = ∑ z∈top-k(p(·|x)) pη(z|x) N∏ i pθ(yi|x,z,y 1:i−1) RAG-Token Model In the RAG-Token model we can draw a different latent document for each target token and marginalize accordingly. [rag_paper.pdf, page 3]",
-      "faithfulness": 0.9459459459459459,
-      "relevance": 1.0,
-      "correctness": 0.13793103448275862,
-      "latency_ms": 7.1184999997058185
-    },
-    {
-      "id": "q_032",
-      "question": "Can the non-parametric knowledge in RAG be updated without retraining the entire model?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p9_Page_9_c1",
-        "rag_paper.pdf_p9_c1",
-        "rag_paper.pdf_p7_c2",
-        "rag_paper.pdf_p7_Page_7_c2",
-        "rag_paper.pdf_p1_Page_1_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p7_Page_7_c2",
-        "rag_paper.pdf_p1_Page_1_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 4,
-      "answer": "Index hot-swapping An advantage of non-parametric memory models like RAG is that knowledge can be easily updated at test time. [rag_paper.pdf, page 7]",
-      "faithfulness": 0.8888888888888888,
-      "relevance": 1.0,
-      "correctness": 0.3636363636363637,
-      "latency_ms": 7.377100000667269
-    },
-    {
-      "id": "q_033",
-      "question": "What exact match score did RAG-Sequence achieve on Open-Domain TriviaQA?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p18_Page_18_c0",
-        "rag_paper.pdf_p18_c0",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p4_Page_4_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p6_Page_6_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "D Further Details on Open-Domain QA For open-domain QA, multiple answer annotations are often available for a given question. [rag_paper.pdf, page 18]",
-      "faithfulness": 0.8666666666666667,
-      "relevance": 0.5454545454545454,
-      "correctness": 0.06666666666666667,
-      "latency_ms": 7.06129999980476
-    },
-    {
-      "id": "q_034",
-      "question": "How does RAG generate more factual and specific responses than purely parametric seq2seq models?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p4_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p6_Page_6_c1",
-        "rag_paper.pdf_p1_Page_1_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "We also compare to “Closed-Book QA” approaches [52], which, like RAG, generate answers, but which do not exploit retrieval, instead relying purely on parametric knowledge. [rag_paper.pdf, page 4]",
-      "faithfulness": 0.9090909090909091,
-      "relevance": 0.6153846153846154,
-      "correctness": 0.1509433962264151,
-      "latency_ms": 8.954899999480403
-    },
-    {
-      "id": "q_035",
-      "question": "What decoding algorithm is used for RAG-Token generation?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c0",
-        "rag_paper.pdf_p3_c0",
-        "rag_paper.pdf_p4_c0",
-        "rag_paper.pdf_p4_Page_4_c0",
-        "rag_paper.pdf_p17_Page_17_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c1"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Concretely, the top K documents are retrieved using the retriever, and then the generator produces a distribution for the next output token for each document, before marginalizing, and repeating the process with the following output token, Formally, we deﬁne: pRAG-Token(y|x) ≈ N∏ i ∑ z∈top-k(p(·|x)) pη(z|x)pθ(yi|x,z,y 1:i−1) Finally, we note that RAG can be used for sequence classiﬁcation tasks by considering the target class as a target sequence of length one, in which case RAG-Sequence and RAG-Token are equivalent. [rag_paper.pdf, page 3]",
-      "faithfulness": 0.96,
-      "relevance": 1.0,
-      "correctness": 0.16470588235294117,
-      "latency_ms": 6.504300000415242
-    },
-    {
-      "id": "q_036",
-      "question": "What is Thorough Decoding in the context of RAG-Sequence models?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c0",
-        "rag_paper.pdf_p4_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p4_Page_4_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p4_Page_4_c1"
-      ],
-      "hit_at_k": true,
-      "first_rank": 5,
-      "answer": "For RAG-Sequence models, we report test results using 50 retrieved documents, and we use the Thorough Decoding approach since answers are generally short. [rag_paper.pdf, page 17]",
-      "faithfulness": 0.8888888888888888,
-      "relevance": 1.0,
-      "correctness": 0.24,
-      "latency_ms": 6.605000000490691
-    },
-    {
-      "id": "q_037",
-      "question": "What benchmark was used to test RAG on Jeopardy question generation?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p6_Page_6_c1",
-        "rag_paper.pdf_p6_c1",
-        "rag_paper.pdf_p8_c0",
-        "rag_paper.pdf_p8_Page_8_c0",
-        "rag_paper.pdf_p5_Page_5_c0"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p7_Page_7_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "4.3 Jeopardy Question Generation Table 2 shows that RAG-Token performs better than RAG-Sequence on Jeopardy question generation, with both models outperforming BART on Q-BLEU-1. [rag_paper.pdf, page 6]",
-      "faithfulness": 0.9090909090909091,
-      "relevance": 1.0,
-      "correctness": 0.18604651162790697,
-      "latency_ms": 7.6524000005520065
-    },
-    {
-      "id": "q_038",
-      "question": "Does fine-tuning RAG backpropagate into the query encoder of the retriever?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p2_c2",
-        "rag_paper.pdf_p2_Page_2_c2",
-        "rag_paper.pdf_p9_Page_9_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_paper.pdf_p3_Page_3_c1"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "As shown in Figure 1, our models leverage two components: (i) a retriever pη(z|x) with parametersη that returns (top-K truncated) distributions over text passages given a queryx and (ii) a generatorpθ(yi|x,z,y 1:i−1) parametrized 1Code to run experiments with RAG has been open-sourced as part of the HuggingFace Transform- ers Library [66] and can be found at https://github.com/huggingface/transformers/blob/master/ examples/rag/. [rag_paper.pdf, page 2]",
-      "faithfulness": 0.9565217391304348,
-      "relevance": 0.4444444444444444,
-      "correctness": 0.047058823529411764,
-      "latency_ms": 9.303199999521894
-    },
-    {
-      "id": "q_039",
-      "question": "What is the core mathematical formulation of LoRA weight adaptation?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p2_c0",
-        "lora_paper.pdf_p2_Page_2_c0",
-        "lora_paper.pdf_p1_Page_1_c0",
-        "lora_paper.pdf_p1_c0",
-        "lora_paper.pdf_p4_Page_4_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p3_Page_3_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "LoRA takes a step further and does not require the accumu- lated gradient update to weight matrices to have full-rank during adaptation. [lora_paper.pdf, page 4]",
-      "faithfulness": 0.9,
-      "relevance": 1.0,
-      "correctness": 0.15,
-      "latency_ms": 8.981100000710285
-    },
-    {
-      "id": "q_040",
-      "question": "How are matrices A and B initialized in LoRA?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p4_Page_4_c1",
-        "lora_paper.pdf_p4_c1",
-        "lora_paper.pdf_p12_c1",
-        "lora_paper.pdf_p12_Page_12_c1",
-        "lora_paper.pdf_p23_c2"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p3_Page_3_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "LoRA takes a step further and does not require the accumu- lated gradient update to weight matrices to have full-rank during adaptation. [lora_paper.pdf, page 4]",
-      "faithfulness": 0.9,
-      "relevance": 1.0,
-      "correctness": 0.16666666666666669,
-      "latency_ms": 8.634900000288326
-    },
-    {
-      "id": "q_041",
-      "question": "What scaling factor is applied to Delta W in LoRA?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p10_Page_10_c0",
-        "lora_paper.pdf_p10_c0",
-        "lora_paper.pdf_p4_c1",
-        "lora_paper.pdf_p4_Page_4_c1",
-        "lora_paper.pdf_p10_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p3_Page_3_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "7.1 W HICH WEIGHT MATRICES IN TRANSFORMER SHOULD WE APPLY LORA TO? [lora_paper.pdf, page 10]",
-      "faithfulness": 0.7777777777777778,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.11764705882352941,
-      "latency_ms": 7.701300000007905
-    },
-    {
-      "id": "q_042",
-      "question": "By how much does LoRA reduce trainable parameters compared to full fine-tuning on GPT-3 175B?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p5_Page_5_c1",
-        "lora_paper.pdf_p5_c1",
-        "lora_paper.pdf_p21_Page_21_c0",
-        "lora_paper.pdf_p21_c0",
-        "lora_paper.pdf_p20_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p1_Page_1_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "during training on GPT-3 175B compared to full ﬁne-tuning 5 as we do not need to calculate the gradient for the vast majority of the parameters. [lora_paper.pdf, page 5]",
-      "faithfulness": 0.8823529411764706,
-      "relevance": 1.0,
-      "correctness": 0.1702127659574468,
-      "latency_ms": 8.78149999971356
-    },
-    {
-      "id": "q_043",
-      "question": "Does LoRA introduce any additional inference latency when deployed in production?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p2_c0",
-        "lora_paper.pdf_p2_Page_2_c0",
-        "lora_paper.pdf_p5_c1",
-        "lora_paper.pdf_p5_Page_5_c1",
-        "lora_paper.pdf_p2_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p1_Page_1_c0",
-        "lora_paper.pdf_p4_Page_4_c2"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "• Our simple linear design allows us to merge the trainable matrices with the frozen weights when deployed, introducing no inference latency compared to a fully ﬁne-tuned model, by construction. [lora_paper.pdf, page 2]",
-      "faithfulness": 0.9130434782608695,
-      "relevance": 0.8,
-      "correctness": 0.21818181818181817,
-      "latency_ms": 8.24929999998858
-    },
-    {
-      "id": "q_044",
-      "question": "Which Transformer attention weight matrices does LoRA typically adapt?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p5_c0",
-        "lora_paper.pdf_p5_Page_5_c0",
-        "lora_paper.pdf_p10_c0",
-        "lora_paper.pdf_p10_Page_10_c0",
-        "lora_paper.pdf_p21_Page_21_c0"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p4_Page_4_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "4.2 A PPLYING LORA TO TRANSFORMER In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce the number of trainable parameters. [lora_paper.pdf, page 5]",
-      "faithfulness": 0.8947368421052632,
-      "relevance": 0.8888888888888888,
-      "correctness": 0.15,
-      "latency_ms": 6.793600000492006
-    },
-    {
-      "id": "q_045",
-      "question": "What rank r is often sufficient for competitive performance in downstream tasks according to LoRA experiments?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p10_Page_10_c1",
-        "lora_paper.pdf_p10_c1",
-        "lora_paper.pdf_p10_c0",
-        "lora_paper.pdf_p10_Page_10_c0",
-        "lora_paper.pdf_p10_Page_10_c2"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p8_Page_8_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Given a limited parameter budget, which types of weights should we adapt with LoRA to obtain the best performance on downstream tasks? [lora_paper.pdf, page 10]",
-      "faithfulness": 0.8823529411764706,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.13333333333333333,
-      "latency_ms": 7.4477999996815925
-    },
-    {
-      "id": "q_046",
-      "question": "How does LoRA prevent catastrophic forgetting during domain-specific adaptation?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p2_c0",
-        "lora_paper.pdf_p2_Page_2_c0",
-        "lora_paper.pdf_p12_c1",
-        "lora_paper.pdf_p12_Page_12_c1",
-        "lora_paper.pdf_p1_c0"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p1_Page_1_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "We hypothesize that the change in weights during model adaptation also has a low “intrinsic rank”, leading to our proposed Low-Rank Adaptation (LoRA) approach. [lora_paper.pdf, page 2]",
-      "faithfulness": 0.9047619047619048,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.16666666666666669,
-      "latency_ms": 7.423000000017055
-    },
-    {
-      "id": "q_047",
-      "question": "How much memory savings does LoRA achieve for optimizer states during training?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p21_c0",
-        "lora_paper.pdf_p21_Page_21_c0",
-        "lora_paper.pdf_p20_Page_20_c0",
-        "lora_paper.pdf_p20_c0",
-        "lora_paper.pdf_p20_Page_20_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p2_Page_2_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Hyperparameters Fine-Tune PreEmbed PreLayer BitFit Adapter H LoRA Optimizer AdamW Batch Size 128 # Epoch 2 Warmup Tokens 250,000 LR Schedule Linear Learning Rate 5.00E-06 5.00E-04 1.00E-04 1.6E-03 1.00E-04 2.00E-04 Table 12: The training hyperparameters used for different GPT-3 adaption methods. [lora_paper.pdf, page 21]",
-      "faithfulness": 0.9459459459459459,
-      "relevance": 0.7272727272727273,
-      "correctness": 0.11940298507462686,
-      "latency_ms": 8.279399999992165
-    },
-    {
-      "id": "q_048",
-      "question": "Can different LoRA adapter weights be switched at runtime on a shared base model?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p6_Page_6_c3",
-        "lora_paper.pdf_p6_c3",
-        "lora_paper.pdf_p5_Page_5_c0",
-        "lora_paper.pdf_p5_c0",
-        "lora_paper.pdf_p4_c0"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p1_Page_1_c0",
-        "lora_paper.pdf_p4_Page_4_c2"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Another beneﬁt is that we can switch between tasks while deployed at a much lower cost by only swapping the LoRA weights as opposed to all the parameters. [lora_paper.pdf, page 5]",
-      "faithfulness": 0.9,
-      "relevance": 0.7142857142857143,
-      "correctness": 0.11764705882352941,
-      "latency_ms": 10.113400000591355
-    },
-    {
-      "id": "q_049",
-      "question": "What benchmark results did LoRA achieve on GLUE compared to full fine-tuning of RoBERTa?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p20_Page_20_c1",
-        "lora_paper.pdf_p20_c1",
-        "lora_paper.pdf_p21_c0",
-        "lora_paper.pdf_p21_Page_21_c0",
-        "lora_paper.pdf_p7_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p6_Page_6_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "While RoBERTa has been overtaken by much larger models on NLP leaderboards such as the GLUE benchmark (Wang et al., 2019) in recent years, it remains a competitive and popular pre-trained model for its size among practitioners. [lora_paper.pdf, page 7]",
-      "faithfulness": 0.9310344827586207,
-      "relevance": 0.6666666666666666,
-      "correctness": 0.12903225806451613,
-      "latency_ms": 10.388400000010733
-    },
-    {
-      "id": "q_050",
-      "question": "What is the intrinsic dimension hypothesis that motivates LoRA?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p2_c0",
-        "lora_paper.pdf_p2_Page_2_c0",
-        "lora_paper.pdf_p12_c1",
-        "lora_paper.pdf_p12_Page_12_c1",
-        "lora_paper.pdf_p23_c2"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p2_Page_2_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 2,
-      "answer": "(2020) which show that the learned over-parametrized models in fact reside on a low intrinsic dimension. [lora_paper.pdf, page 2]",
-      "faithfulness": 0.8571428571428571,
-      "relevance": 1.0,
-      "correctness": 0.4186046511627907,
-      "latency_ms": 9.290400000281807
-    },
-    {
-      "id": "q_051",
-      "question": "Does adapting all attention weights (W_q, W_k, W_v, W_o) with lower rank perform better than adapting only W_q with higher rank?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p10_c0",
-        "lora_paper.pdf_p10_Page_10_c0",
-        "lora_paper.pdf_p9_Page_9_c2",
-        "lora_paper.pdf_p9_c2",
-        "lora_paper.pdf_p10_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p7_Page_7_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Note that the low-rank structure not only lowers the hardware barrier to entry which allows us to run multiple experiments in parallel, but also gives better interpretability of how the update weights are correlated with the pre-trained weights. [lora_paper.pdf, page 9]",
-      "faithfulness": 0.9333333333333333,
-      "relevance": 0.5882352941176471,
-      "correctness": 0.14035087719298245,
-      "latency_ms": 11.641600000075414
-    },
-    {
-      "id": "q_052",
-      "question": "What is the relationship between subspace similarity and rank r in LoRA weights?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p11_Page_11_c0",
-        "lora_paper.pdf_p11_c0",
-        "lora_paper.pdf_p10_c1",
-        "lora_paper.pdf_p10_Page_10_c1",
-        "lora_paper.pdf_p26_Page_26_c0"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p8_Page_8_c1"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Subspace similarity between different r. [lora_paper.pdf, page 11]",
-      "faithfulness": 0.6666666666666666,
-      "relevance": 0.8888888888888888,
-      "correctness": 0.14814814814814814,
-      "latency_ms": 8.525700000063807
-    },
-    {
-      "id": "q_053",
-      "question": "Why does prefix tuning or prompt tuning face sequence length limitations compared to LoRA?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p21_Page_21_c0",
-        "lora_paper.pdf_p21_c0",
-        "lora_paper.pdf_p20_Page_20_c1",
-        "lora_paper.pdf_p20_c1",
-        "lora_paper.pdf_p8_c1"
-      ],
-      "gold_chunk_ids": [
-        "lora_paper.pdf_p2_Page_2_c0"
-      ],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "E C OMBINING LORA WITH PREFIX TUNING LoRA can be naturally combined with existing preﬁx-based approaches. [lora_paper.pdf, page 20]",
-      "faithfulness": 0.8461538461538461,
-      "relevance": 0.5454545454545454,
-      "correctness": 0.1951219512195122,
-      "latency_ms": 8.901899999727902
-    },
-    {
-      "id": "q_054",
-      "question": "What is the formula and standard constant k for Reciprocal Rank Fusion (RRF)?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_system_architecture.html_p1_Production_RAG_Architect_c0",
-        "rag_system_architecture.html_p1_c0",
-        "lora_paper.pdf_p11_c0",
-        "lora_paper.pdf_p11_Page_11_c0",
-        "lora_paper.pdf_p11_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_system_architecture.html_p1_Production_RAG_Architect_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 1,
-      "answer": "The ranking scores from both retrieval pipelines are merged using Reciprocal Rank Fusion (RRF): [rag_system_architecture.html, page 1]",
-      "faithfulness": 0.8461538461538461,
-      "relevance": 0.8,
-      "correctness": 0.2,
-      "latency_ms": 7.664599999770871
-    },
-    {
-      "id": "q_055",
-      "question": "Why does a production RAG system combine BM25 sparse search with dense vector search?",
-      "answerable": true,
-      "retrieved_chunk_ids": [
-        "rag_system_architecture.html_p1_Production_RAG_Architect_c0",
-        "rag_system_architecture.html_p1_c0",
-        "rag_paper.pdf_p17_c0",
-        "rag_paper.pdf_p17_Page_17_c0",
-        "rag_paper.pdf_p7_Page_7_c1"
-      ],
-      "gold_chunk_ids": [
-        "rag_system_architecture.html_p1_Production_RAG_Architect_c0"
-      ],
-      "hit_at_k": true,
-      "first_rank": 1,
-      "answer": "To overcome this limitation, production architectures deploy a hybrid retrieval strategy combining dense cosine vector search with sparse BM25 keyword matching. [rag_system_architecture.html, page 1]",
-      "faithfulness": 0.8947368421052632,
-      "relevance": 1.0,
-      "correctness": 0.22222222222222224,
-      "latency_ms": 7.327600000280654
-    },
-    {
-      "id": "q_056",
-      "question": "What is the return and refund policy for annual enterprise subscription plans?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "rag_paper.pdf_p8_c1",
-        "rag_paper.pdf_p8_Page_8_c1",
-        "lora_paper.pdf_p20_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.0,
-      "correctness": 1.0,
-      "latency_ms": 8.20579999981419
-    },
-    {
-      "id": "q_057",
-      "question": "How many qubits are required to execute Shor's algorithm in Qiskit on IBM Quantum Heron?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p19_c1",
-        "lora_paper.pdf_p19_Page_19_c1",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p20_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.15384615384615385,
-      "correctness": 1.0,
-      "latency_ms": 8.306699999593548
-    },
-    {
-      "id": "q_058",
-      "question": "What are the eligibility requirements for the corporate employee health reimbursement account?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p6_c0",
-        "lora_paper.pdf_p6_Page_6_c0",
-        "rag_paper.pdf_p8_c0",
-        "rag_paper.pdf_p8_Page_8_c0",
-        "rag_system_architecture.html_p1_Production_RAG_Architect_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 1.0,
-      "relevance": 0.0,
-      "correctness": 1.0,
-      "latency_ms": 6.536900000355672
-    },
-    {
-      "id": "q_059",
-      "question": "What is the architectural breakdown and training dataset size of OpenAI's GPT-5?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p19_c1",
-        "lora_paper.pdf_p19_Page_19_c1",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p24_Page_24_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Hyperparameters Adaptation MNLI-100 MNLI-1k MNLI-10K MNLI-392K Optimizer - AdamW Warmup Tokens - 250,000 LR Schedule - Linear Batch Size - 20 20 100 128 # Epoch - 40 40 4 2 Learning Rate FineTune 5.00E-6 PreﬁxEmbed 2.00E-04 2.00E-04 4.00E-04 5.00E-04 PreﬁxLayer 5.00E-05 5.00E-05 5.00E-05 1.00E-04 LoRA 2.00E-4 PreﬁxEmbedlp 16 32 64 256 Adaptation- PreﬁxEmbedli 8 Speciﬁc PreﬁxTune lp =li = 8 LoRA rq =rv = 8 Table 17: The hyperparameters used for different GPT-3 adaptation methods on MNLI(m)-n. [lora_paper.pdf, page 24]",
-      "faithfulness": 0.9636363636363636,
-      "relevance": 0.6,
-      "correctness": 0.05405405405405406,
-      "latency_ms": 8.35469999947236
-    },
-    {
-      "id": "q_060",
-      "question": "What is the maximum baggage weight allowance on transatlantic Lufthansa flights?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p20_Page_20_c0",
-        "lora_paper.pdf_p20_c0",
-        "lora_paper.pdf_p5_c2",
-        "lora_paper.pdf_p5_Page_5_c2",
-        "lora_paper.pdf_p23_Page_23_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "Dataset E2E WebNLG DART Training Optimizer AdamW Weight Decay 0.01 0.01 0.0 Dropout Prob 0.1 0.1 0.0 Batch Size 8 # Epoch 5 Warmup Steps 500 Learning Rate Schedule Linear Label Smooth 0.1 0.1 0.0 Learning Rate 0.0002 Adaptation rq =rv = 4 LoRAα 32 Inference Beam Size 10 Length Penalty 0.9 0.8 0.8 no repeat ngram size 4 Table 11: The hyperparameters for GPT-2 LoRA on E2E, WebNLG and DART. [lora_paper.pdf, page 20]",
-      "faithfulness": 0.9555555555555556,
-      "relevance": 0.5,
-      "correctness": 0.05970149253731343,
-      "latency_ms": 7.798200000252109
-    },
-    {
-      "id": "q_061",
-      "question": "How does the Linux kernel handle virtual memory page faults on ARM64 processors?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "flash_attention.md_p1_GPU_Memory_Hierarchy_and_c0",
-        "flash_attention.md_p1_Abstract_c0",
-        "lora_paper.pdf_p3_Page_3_c2",
-        "lora_paper.pdf_p3_c2",
-        "attention_paper.pdf_p9_Page_9_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "On modern GPUs (such as NVIDIA A100), compute throughput is significantly faster than memory bandwidth. [flash_attention.md, page 1]",
-      "faithfulness": 0.9230769230769231,
-      "relevance": 0.5454545454545454,
-      "correctness": 0.07142857142857142,
-      "latency_ms": 6.981900000027963
-    },
-    {
-      "id": "q_062",
-      "question": "What is the difficulty adjustment epoch duration in the Bitcoin proof-of-work protocol?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p19_Page_19_c1",
-        "lora_paper.pdf_p19_c1",
-        "lora_paper.pdf_p20_c0",
-        "lora_paper.pdf_p20_Page_20_c0",
-        "lora_paper.pdf_p8_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.0,
-      "correctness": 1.0,
-      "latency_ms": 8.677899999383953
-    },
-    {
-      "id": "q_063",
-      "question": "What is the recommended dosage of amoxicillin for pediatric respiratory infections?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p23_Page_23_c0",
-        "lora_paper.pdf_p23_c0",
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "lora_paper.pdf_p20_Page_20_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.0,
-      "correctness": 1.0,
-      "latency_ms": 6.686900000204332
-    },
-    {
-      "id": "q_064",
-      "question": "What are the zoning regulations and permit fees for residential solar installations in Austin, Texas?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p23_Page_23_c0",
-        "lora_paper.pdf_p23_c0",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p25_c0"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "I don't know based on the provided documents.",
-      "faithfulness": 0.0,
-      "relevance": 0.0,
-      "correctness": 1.0,
-      "latency_ms": 6.828800000221236
-    },
-    {
-      "id": "q_065",
-      "question": "What is the warranty coverage duration for Tesla Model 3 high-voltage battery degradation?",
-      "answerable": false,
-      "retrieved_chunk_ids": [
-        "lora_paper.pdf_p20_Page_20_c0",
-        "lora_paper.pdf_p20_c0",
-        "lora_paper.pdf_p19_c0",
-        "lora_paper.pdf_p19_Page_19_c0",
-        "lora_paper.pdf_p5_Page_5_c2"
-      ],
-      "gold_chunk_ids": [],
-      "hit_at_k": false,
-      "first_rank": 0,
-      "answer": "5For GPT-3 175B, the training throughput for full ﬁne-tuning is 32.5 tokens/s per V100 GPU; with the same number of weight shards for model parallelism, the throughput is 43.1 tokens/s per V100 GPU for LoRA. [lora_paper.pdf, page 5]",
-      "faithfulness": 0.9230769230769231,
-      "relevance": 0.5454545454545454,
-      "correctness": 0.047619047619047616,
-      "latency_ms": 9.516400000393332
+      "latency_ms": 8.660999999847263
     }
   ]
 }

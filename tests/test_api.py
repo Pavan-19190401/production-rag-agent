@@ -118,10 +118,11 @@ def test_feedback_endpoint():
 
 
 def test_tracing_and_feedback_connection():
+    import uuid
     from app.tracer import tracer
 
-    # Execute a query
-    req_id = "trace-test-uuid-999"
+    # Execute a query with a unique request ID
+    req_id = f"trace-test-{uuid.uuid4()}"
     res = client.post(
         "/query",
         json={"question": "What is FlashAttention?", "top_k": 2},

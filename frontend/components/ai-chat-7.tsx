@@ -25,7 +25,12 @@ import {
   BookOpen,
   Hash,
   Plus,
-  ArrowUp
+  ArrowUp,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import LatticeLoader from './LatticeLoader';
@@ -121,7 +126,102 @@ export function AIChat7() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice Input (Web Speech Recognition)
+  const toggleListening = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0]?.[0]?.transcript;
+      if (transcript) {
+        setInput(prev => (prev ? `${prev} ${transcript}` : transcript));
+      }
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  // Text-to-Speech (Read Aloud)
+  const toggleSpeech = (id: string, text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/\[\d+\]/g, '').replace(/\[.*?page \d+\]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Export Chat as Markdown
+  const exportChat = () => {
+    if (messages.length === 0) return;
+    let md = `# Research Assistant Session - ${new Date().toLocaleString()}\n\n`;
+    messages.forEach((m) => {
+      const role = m.role === 'user' ? '### 👤 User' : '### 🤖 Grounded Assistant';
+      md += `${role}\n\n${m.content}\n\n`;
+      if (m.citations && m.citations.length > 0) {
+        md += `**Cited Sources:**\n`;
+        m.citations.forEach((c, cIdx) => {
+          md += `- [${cIdx + 1}] \`${c.source}\` (Page ${c.page}) - Score: ${c.score}\n`;
+        });
+        md += '\n';
+      }
+      md += '---\n\n';
+    });
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `research-session-${Date.now()}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'rag-prod-secret-key-change-me';
@@ -610,9 +710,25 @@ export function AIChat7() {
               <strong className="text-slate-200 font-mono">{totalCitationsCount}</strong> sources Cited
             </span>
 
+            {/* Export Chat */}
+            {messages.length > 0 && (
+              <button
+                onClick={exportChat}
+                className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-[#1c1c21] transition-colors flex items-center gap-1 text-xs"
+                title="Export Chat as Markdown"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            )}
+
             <button
-              onClick={() => setMessages([])}
-              className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-[#1c1c21] transition-colors"
+              onClick={() => {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                setSpeakingId(null);
+                setMessages([]);
+              }}
+              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-[#1c1c21] transition-colors"
               title="Clear Thread"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -753,6 +869,29 @@ export function AIChat7() {
                         <span className="text-slate-700">•</span>
 
                         <button
+                          onClick={() => toggleSpeech(msg.id, msg.content)}
+                          className={cn(
+                            "flex items-center gap-1 hover:text-slate-300 transition-colors",
+                            speakingId === msg.id && "text-emerald-400 font-medium"
+                          )}
+                          title={speakingId === msg.id ? "Stop Listening" : "Read Aloud"}
+                        >
+                          {speakingId === msg.id ? (
+                            <>
+                              <VolumeX className="w-3 h-3 text-emerald-400 animate-pulse" />
+                              <span className="text-[11px] text-emerald-400">Stop</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-3 h-3" />
+                              <span className="text-[11px]">Listen</span>
+                            </>
+                          )}
+                        </button>
+
+                        <span className="text-slate-700">•</span>
+
+                        <button
                           onClick={() => handleFeedback(msg.id, 1)}
                           className={cn("p-0.5 hover:text-slate-300 transition-colors", msg.feedback === 1 && "text-emerald-400 font-bold")}
                           title="Grounded & Helpful"
@@ -829,6 +968,20 @@ export function AIChat7() {
                   title="Upload New Document"
                 >
                   <Plus className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                    isListening
+                      ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse"
+                      : "bg-[#1f1f26] hover:bg-[#282832] text-slate-400 hover:text-slate-200"
+                  )}
+                  title={isListening ? "Listening... Click to Stop" : "Voice Input"}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
 
                 <span className="text-[11px] font-mono text-slate-500">

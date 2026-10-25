@@ -1,3 +1,4 @@
+import concurrent.futures
 from typing import List, Dict, Any, Optional
 from app.retrieval.dense import DenseRetriever, RetrievedChunk
 from app.retrieval.bm25 import BM25Retriever
@@ -59,12 +60,15 @@ class HybridRetriever:
         self.rrf_k = rrf_k
 
     def retrieve(self, query: str, top_k: int = 5) -> List[RetrievedChunk]:
-        """Runs both dense and BM25 retrievers and fuses them with RRF."""
+        """Runs both dense and BM25 retrievers concurrently and fuses them with RRF."""
         if not query.strip():
             return []
 
-        dense_hits = self.dense.retrieve(query, top_k=self.candidate_pool)
-        bm25_hits = self.bm25.retrieve(query, top_k=self.candidate_pool)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_dense = executor.submit(self.dense.retrieve, query, self.candidate_pool)
+            future_bm25 = executor.submit(self.bm25.retrieve, query, self.candidate_pool)
+            dense_hits = future_dense.result()
+            bm25_hits = future_bm25.result()
 
         return reciprocal_rank_fusion(
             [dense_hits, bm25_hits],

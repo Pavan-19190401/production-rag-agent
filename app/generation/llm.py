@@ -128,6 +128,44 @@ class LLMClient:
                     yield f"Error generating response: {fb_err}"
                     return
 
+        elif self.provider == "gemini" and settings.GEMINI_API_KEY:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.LLM_MODEL}:streamGenerateContent?alt=sse&key={settings.GEMINI_API_KEY}"
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {"text": f"{GROUNDING_SYSTEM_PROMPT}\n\n{user_prompt}".strip()}
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "temperature": settings.LLM_TEMPERATURE,
+                        "maxOutputTokens": settings.MAX_TOKENS_PER_QUERY
+                    }
+                }
+                import json
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    async with client.stream("POST", url, json=payload) as stream_res:
+                        stream_res.raise_for_status()
+                        async for line in stream_res.aiter_lines():
+                            if line.startswith("data:"):
+                                data_str = line[5:].strip()
+                                if not data_str:
+                                    continue
+                                try:
+                                    parsed = json.loads(data_str)
+                                    candidates = parsed.get("candidates", [])
+                                    if candidates:
+                                        parts = candidates[0].get("content", {}).get("parts", [])
+                                        if parts and "text" in parts[0]:
+                                            yield parts[0]["text"]
+                                except Exception:
+                                    pass
+                return
+            except Exception as e:
+                pass
+
         # Fallback synchronous generator yielding chunks
         res = self.generate(question, chunks)
         # Yield words with small pause

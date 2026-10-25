@@ -9,21 +9,22 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-from app.retrieval.dense import DenseRetriever
+from app.retrieval.pipeline import get_default_retriever
 from app.generation.llm import LLMClient
 from app.config import settings
 
 
-def query_rag(question: str, top_k: int = 5) -> None:
+def query_rag(question: str, top_k: int = 5, mode: str = "hybrid") -> None:
     """Executes retrieve-then-generate pipeline and prints response with citations."""
     print("=" * 70)
     print(f"QUERY: {question}")
+    print(f"PIPELINE: {mode.upper()} RETRIEVAL")
     print("=" * 70)
 
     start_time = time.perf_counter()
 
     # 1. Retrieval
-    retriever = DenseRetriever()
+    retriever = get_default_retriever(mode=mode)
     retrieval_start = time.perf_counter()
     chunks = retriever.retrieve(question, top_k=top_k)
     retrieval_ms = (time.perf_counter() - retrieval_start) * 1000
@@ -62,18 +63,19 @@ def main():
     parser = argparse.ArgumentParser(description="Production RAG CLI Interface")
     parser.add_argument("--question", "-q", type=str, default=None, help="User query to ask the RAG system")
     parser.add_argument("--top-k", "-k", type=int, default=5, help="Number of chunks to retrieve")
+    parser.add_argument("--mode", "-m", type=str, default="hybrid", choices=["dense", "hybrid", "rerank", "rewrite"], help="Retrieval mode")
     args = parser.parse_args()
 
     if args.question:
-        query_rag(args.question, top_k=args.top_k)
+        query_rag(args.question, top_k=args.top_k, mode=args.mode)
     else:
-        print("Production RAG System CLI. Type 'exit' or 'quit' to stop.")
+        print(f"Production RAG System CLI (mode: {args.mode}). Type 'exit' or 'quit' to stop.")
         while True:
             try:
                 q = input("\nEnter Question > ").strip()
                 if not q or q.lower() in ("exit", "quit"):
                     break
-                query_rag(q, top_k=args.top_k)
+                query_rag(q, top_k=args.top_k, mode=args.mode)
             except (KeyboardInterrupt, EOFError):
                 break
 

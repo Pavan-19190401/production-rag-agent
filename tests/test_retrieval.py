@@ -45,3 +45,30 @@ def test_prompt_injection_defense():
     # When using mock or grounding prompt, instructions in chunk must not be followed
     result = llm.generate("What is the capital of France?", chunks=chunks)
     assert "PWNED" not in result["answer"]
+
+
+def test_reciprocal_rank_fusion():
+    from app.retrieval.hybrid import reciprocal_rank_fusion
+
+    list1 = [
+        RetrievedChunk(chunk_id="docA", text="text A", score=0.9, source="a.txt", page=1, metadata={}),
+        RetrievedChunk(chunk_id="docB", text="text B", score=0.8, source="b.txt", page=1, metadata={})
+    ]
+    list2 = [
+        RetrievedChunk(chunk_id="docB", text="text B", score=10.0, source="b.txt", page=1, metadata={}),
+        RetrievedChunk(chunk_id="docC", text="text C", score=5.0, source="c.txt", page=1, metadata={})
+    ]
+
+    fused = reciprocal_rank_fusion([list1, list2], k=60, top_k=3)
+    assert len(fused) == 3
+    # docB was rank 2 in list1 and rank 1 in list2, so its combined RRF score is highest
+    assert fused[0].chunk_id == "docB"
+
+
+def test_query_rewriter():
+    from app.retrieval.rewrite import QueryRewriter
+
+    rewriter = QueryRewriter()
+    queries = rewriter.rewrite("What is the rank r in LoRA?")
+    assert len(queries) == 2
+    assert "Low-Rank Adaptation" in queries[1]

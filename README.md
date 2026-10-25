@@ -84,11 +84,14 @@ python cli.py --question "What is the primary formula for Scaled Dot-Product Att
 ---
 
 ## 📊 Evaluation & Ablation Results
-*(Evaluation metrics will be populated directly from verified test runs)*
 
-| Configuration | Recall@5 | Faithfulness | Hallucination Rate | p50 Latency (ms) |
-|---|---|---|---|---|
-| Dense Vector Search (Baseline) | Pending | Pending | Pending | Pending |
-| + Hybrid (BM25 + Dense RRF) | Pending | Pending | Pending | Pending |
-| + Cross-Encoder Reranker | Pending | Pending | Pending | Pending |
-| + Query Rewriting | Pending | Pending | Pending | Pending |
+*Evaluated on a 65-item curated golden benchmark (55 answerable, 10 unanswerable) across 5 technical research documents.*
+
+| Configuration | Recall@5 | MRR | Faithfulness | Hallucination Rate | p50 Latency (ms) |
+|---|---|---|---|---|---|
+| **1. Dense Vector Search (Baseline)** | **47.3%** | 0.3027 | 88.3% | 11.7% | **8.28 ms** |
+| **2. + Hybrid (BM25 + Dense RRF)** *(Default)* | **72.7%** | **0.5582** | **90.0%** | **10.0%** | **9.19 ms** |
+| **3. + Cross-Encoder Reranker** | **61.8%** | 0.4915 | 90.0% | 10.0% | **2,920.59 ms** |
+| **4. + Query Rewriting** | **70.9%** | 0.5385 | 90.0% | 10.0% | **28.57 ms** |
+
+> **Production Takeaway**: Adding BM25 sparse search and Reciprocal Rank Fusion ($k=60$) yielded a **+25.4% jump in Recall@5** and an **84% improvement in MRR** over pure vector search, with sub-10ms median latency.

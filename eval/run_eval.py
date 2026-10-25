@@ -316,9 +316,25 @@ def main():
     parser.add_argument("--top-k", type=int, default=5, help="Top-K retrieval depth")
     parser.add_argument("--subset", type=int, default=None, help="Subset of dataset to evaluate")
     parser.add_argument("--report-name", type=str, default="baseline_report", help="Report filename prefix")
+    parser.add_argument("--retriever", type=str, default="dense", choices=["dense", "hybrid", "rerank", "rewrite"], help="Retriever configuration to evaluate")
     parser.add_argument("--min-recall", type=float, default=None, help="CI threshold for recall@k")
     parser.add_argument("--min-faithfulness", type=float, default=None, help="CI threshold for faithfulness")
     args = parser.parse_args()
+
+    # Dynamic retriever selection
+    retriever_instance = None
+    if args.retriever == "hybrid":
+        from app.retrieval.hybrid import HybridRetriever
+        retriever_instance = HybridRetriever()
+    elif args.retriever == "rerank":
+        from app.retrieval.rerank import RerankRetriever
+        retriever_instance = RerankRetriever()
+    elif args.retriever == "rewrite":
+        from app.retrieval.rewrite import RewriteRetriever
+        retriever_instance = RewriteRetriever()
+    else:
+        from app.retrieval.dense import DenseRetriever
+        retriever_instance = DenseRetriever()
 
     run_evaluation(
         dataset_path=Path(args.dataset),
@@ -326,7 +342,8 @@ def main():
         subset=args.subset,
         report_name=args.report_name,
         min_recall=args.min_recall,
-        min_faithfulness=args.min_faithfulness
+        min_faithfulness=args.min_faithfulness,
+        retriever_override=retriever_instance
     )
 
 

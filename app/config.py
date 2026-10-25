@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # Embeddings & Reranking
     EMBEDDING_MODEL: str = Field(default="BAAI/bge-small-en-v1.5", description="Dense embedding model")
-    RERANKER_MODEL: str = Field(default="BAAI/bge-reranker-base", description="Cross-encoder reranker model")
+    RERANKER_MODEL: str = Field(default="Xenova/ms-marco-MiniLM-L-6-v2", description="Cross-encoder reranker model")
 
     # Vector DB (Qdrant)
     QDRANT_URL: str = Field(default=str(BASE_DIR / "qdrant_data"), description="Qdrant URL or local storage path")

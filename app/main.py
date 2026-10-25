@@ -245,6 +245,9 @@ async def query_endpoint(
     retrieval_start = time.perf_counter()
     retriever = get_default_retriever(mode=retrieval_mode)
     chunks = retriever.retrieve(req.question, top_k=req.top_k)
+    if req.filters and "sources" in req.filters and req.filters["sources"]:
+        allowed_sources = set(req.filters["sources"])
+        chunks = [c for c in chunks if c.source in allowed_sources]
     retrieval_ms = (time.perf_counter() - retrieval_start) * 1000
     tracer.record_span_retrieval(trace, req.question, chunks, retrieval_ms)
 
@@ -367,6 +370,47 @@ async def feedback_endpoint(
         extra={"extra_data": {"request_id": req.request_id, "rating": req.rating, "comment": req.comment}}
     )
     return FeedbackResponse(status="success", message="Feedback recorded. Thank you!")
+
+
+@app.get(
+    "/documents",
+    summary="List All Indexed Documents & Metadata"
+)
+async def documents_endpoint():
+    """Returns the catalog of indexed documents with chunk and page metrics."""
+    chunks_path = BASE_DIR / "data" / "processed" / "chunks.json"
+    if not chunks_path.exists():
+        return {"documents": []}
+    try:
+        with open(chunks_path, "r", encoding="utf-8") as f:
+            chunks = json.load(f)
+        doc_stats = {}
+        for c in chunks:
+            src = c.get("source", "unknown")
+            if src not in doc_stats:
+                doc_stats[src] = {
+                    "name": src,
+                    "chunks": 0,
+                    "pages": set(),
+                    "type": src.split(".")[-1].lower() if "." in src else "txt",
+                    "title": src.replace("_", " ").replace(".pdf", "").replace(".md", "").replace(".html", "").title()
+                }
+            doc_stats[src]["chunks"] += 1
+            doc_stats[src]["pages"].add(c.get("page", 1))
+
+        docs = [
+            {
+                "name": v["name"],
+                "chunks": v["chunks"],
+                "pages": len(v["pages"]),
+                "type": v["type"],
+                "title": v["title"]
+            }
+            for v in doc_stats.values()
+        ]
+        return {"documents": docs}
+    except Exception as e:
+        return {"documents": [], "error": str(e)}
 
 
 @app.get(

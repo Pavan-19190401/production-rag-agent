@@ -129,6 +129,15 @@ export function AIChat7() {
   const [isListening, setIsListening] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+    }
+  };
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Voice Input (Web Speech Recognition)
@@ -692,7 +701,7 @@ export function AIChat7() {
               <select
                 value={selectedMode}
                 onChange={(e) => setSelectedMode(e.target.value)}
-                className="text-xs bg-[#16161a] border border-[#27272e] text-slate-300 rounded-lg px-2 py-1 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-hidden"
+                className="text-xs bg-[#16161a] border border-[#27272e] text-slate-300 rounded-lg px-2 py-1 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-none"
               >
                 <option value="hybrid">⚡ Hybrid RRF (BM25 + Dense)</option>
                 <option value="dense">🎯 Dense Vector (BGE-Small)</option>
@@ -939,23 +948,30 @@ export function AIChat7() {
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
+              if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+              }
             }}
-            className="rounded-2xl border border-[#27272e] bg-[#141418] focus-within:border-[#3f3f4a] p-3 shadow-lg transition-all"
+            className="rounded-2xl border border-[#27272e] bg-[#141418] focus-within:border-[#3f3f4a] focus-within:ring-1 focus-within:ring-[#3f3f4a]/30 p-3 shadow-lg transition-all outline-none"
           >
             {/* Input Field */}
             <textarea
-              rows={2}
+              ref={textareaRef}
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
+                  if (textareaRef.current) {
+                    textareaRef.current.style.height = 'auto';
+                  }
                 }
               }}
-              placeholder="Ask anything"
+              placeholder="Ask anything..."
               disabled={loading}
-              className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-hidden resize-none leading-relaxed"
+              className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 resize-none leading-relaxed overflow-hidden scrollbar-none"
             />
 
             {/* Bottom Controls Row: '+' Button, Pinned Count Badge, Send Button */}

@@ -13,9 +13,11 @@ services:
       - key: API_KEY
         generateValue: true
       - key: LLM_PROVIDER
-        value: openai
+        value: gemini
       - key: LLM_MODEL
-        value: gpt-4o-mini
+        value: gemini-flash-lite-latest
+      - key: GEMINI_API_KEY
+        sync: false
       - key: OPENAI_API_KEY
         sync: false
       - key: QDRANT_URL

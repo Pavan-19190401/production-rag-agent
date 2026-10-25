@@ -208,7 +208,27 @@ curl -X GET http://localhost:8000/health
 
 ---
 
-## 🛡️ Security & Guardrail Principles
+## 🤖 Agent Layer & Tool Execution (ReAct Loop)
+
+In addition to standard single-turn RAG, the system incorporates an autonomous **ReAct Agent Layer** ([`app/agents/react_agent.py`](file:///c:/Users/manik/OneDrive/Desktop/RAG/app/agents/react_agent.py)) with an intent-based **Query Router** ([`app/agents/router.py`](file:///c:/Users/manik/OneDrive/Desktop/RAG/app/agents/router.py)):
+
+```mermaid
+flowchart LR
+    Query["User Query"] --> Router{"Intent Router"}
+    Router -- "Chitchat / Greetings" --> Direct["0ms Direct Answer"]
+    Router -- "Pure Arithmetic" --> Calc["Safe AST Calculator Tool"]
+    Router -- "Document Fact Lookup" --> RAG["Hybrid RAG Retrieval"]
+    Router -- "Multi-Step / Parameter Ratios" --> ReAct["ReAct Agent (Thought -> Action -> Observation)"]
+```
+
+### Available Agent Tools
+1. `document_search`: Interrogates the indexed knowledge base via hybrid retrieval.
+2. `calculator`: Safe AST mathematical evaluator for exact numerical calculations (e.g. parameter reduction ratios, bandwidth multiples).
+3. `document_metadata`: Inspects corpus catalog, chunk count, and page breakdown.
+
+### Execution Safeguards
+- **Max Iterations Cap**: Strictly limits reasoning loops to a maximum of 4 steps to prevent recursion runaway.
+- **Error Reflection**: Unhandled tool errors are formatted as observations, allowing the model to self-correct during subsequent steps.
 
 1. **Prompt Injection Defense**: Retrieved document text is treated strictly as untrusted data inside the prompt context block; instructions found inside documents cannot alter model directives.
 2. **Deterministic Refusal**: Any unanswerable or out-of-domain query deterministically returns:

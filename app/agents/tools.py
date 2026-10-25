@@ -1,4 +1,5 @@
 import ast
+import re
 import json
 import math
 import operator
@@ -26,10 +27,15 @@ class DocumentSearchTool(Tool):
             description="Searches the indexed research documents using hybrid retrieval. Input: search query string."
         )
         self.retriever = get_default_retriever(mode="hybrid")
+        self.last_retrieved_chunks: List[Any] = []
+
+    def clear(self):
+        self.last_retrieved_chunks = []
 
     def execute(self, argument: str) -> str:
         query = argument.strip().strip('"\'')
         chunks = self.retriever.retrieve(query, top_k=3)
+        self.last_retrieved_chunks.extend(chunks)
         if not chunks:
             return "No relevant passages found in the indexed documents."
 
@@ -83,6 +89,7 @@ class CalculatorTool(Tool):
 
     def execute(self, argument: str) -> str:
         expr = argument.strip().strip('"\'')
+        expr = re.sub(r"^(calculate|what is|compute|eval|evaluate)\s+", "", expr, flags=re.IGNORECASE).strip()
         try:
             tree = ast.parse(expr, mode="eval")
             res = self._eval_node(tree.body)

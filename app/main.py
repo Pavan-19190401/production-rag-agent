@@ -34,6 +34,9 @@ from app.cache import cache
 from app.budget import budget_manager, BudgetExceededError
 from app.observability import logger, telemetry
 from app.tracer import tracer
+from app.agents.router import QueryRouter
+from app.agents.react_agent import ReActAgent
+from app.agents.tools import CalculatorTool
 from ingest.ingest import run_ingestion, get_qdrant_client
 
 # Initialize rate limiter
@@ -154,9 +157,93 @@ async def query_endpoint(
     # 3. Initialize Distributed Trace
     trace = tracer.create_trace(request_id, req.question, mode=req.mode)
 
-    # 4. Retrieve Chunks
+    # 4. Mode Determination & Dynamic Agent Routing
+    mode = req.mode.lower()
+    effective_mode = mode
+    if mode == "auto":
+        router = QueryRouter()
+        effective_mode = router.route(req.question)
+
+    if effective_mode == "direct":
+        async def direct_stream():
+            yield "event: sources\ndata: []\n\n"
+            greeting = (
+                "Hello! I am your production research assistant grounded strictly on arXiv papers "
+                "and technical documentation (Attention, RAG, LoRA, FlashAttention). "
+                "Ask me a technical question, calculate a parameter ratio, or select an example below!"
+            )
+            words = greeting.split(" ")
+            for i, w in enumerate(words):
+                yield f"data: {json.dumps({'token': w + (' ' if i < len(words) - 1 else '')}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.01)
+            yield "event: done\ndata: [DONE]\n\n"
+            latency_ms = (time.perf_counter() - t_start) * 1000
+            tracer.finalize_trace(trace, greeting, 1.0, False, latency_ms)
+            telemetry.record_query(latency_ms, cached=False, is_refusal=False)
+
+        return StreamingResponse(direct_stream(), media_type="text/event-stream")
+
+    elif effective_mode == "calculator":
+        calc = CalculatorTool()
+        res_calc = calc.execute(req.question)
+
+        async def calc_stream():
+            yield f"event: thought\ndata: {json.dumps({'iteration': 1, 'thought': 'Evaluating arithmetic expression directly using AST calculator.', 'tool': 'calculator', 'tool_input': req.question}, ensure_ascii=False)}\n\n"
+            yield f"event: observation\ndata: {json.dumps({'iteration': 1, 'tool': 'calculator', 'content': str(res_calc)}, ensure_ascii=False)}\n\n"
+            yield "event: sources\ndata: []\n\n"
+            calc_answer = f"Calculated Result: {res_calc}"
+            words = calc_answer.split(" ")
+            for i, w in enumerate(words):
+                yield f"data: {json.dumps({'token': w + (' ' if i < len(words) - 1 else '')}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.01)
+            yield "event: done\ndata: [DONE]\n\n"
+            latency_ms = (time.perf_counter() - t_start) * 1000
+            tracer.finalize_trace(trace, calc_answer, 1.0, False, latency_ms)
+            telemetry.record_query(latency_ms, cached=False, is_refusal=False)
+
+        return StreamingResponse(calc_stream(), media_type="text/event-stream")
+
+    elif effective_mode == "agent":
+        agent = ReActAgent()
+
+        async def agent_stream():
+            accumulated_answer = ""
+            agent_citations = []
+            async for item in agent.astream_run(req.question):
+                itype = item.get("type")
+                if itype == "thought":
+                    yield f"event: thought\ndata: {json.dumps(item, ensure_ascii=False)}\n\n"
+                elif itype == "observation":
+                    yield f"event: observation\ndata: {json.dumps(item, ensure_ascii=False)}\n\n"
+                elif itype == "sources":
+                    agent_citations = item.get("citations", [])
+                    yield f"event: sources\ndata: {json.dumps(agent_citations, ensure_ascii=False)}\n\n"
+                elif itype == "token":
+                    accumulated_answer += item.get("token", "")
+                    yield f"data: {json.dumps({'token': item.get('token', '')}, ensure_ascii=False)}\n\n"
+                elif itype == "done":
+                    latency_ms = (time.perf_counter() - t_start) * 1000
+                    tracer.finalize_trace(trace, accumulated_answer, 1.0, False, latency_ms)
+                    telemetry.record_query(latency_ms, cached=False, is_refusal=False)
+                    cache.set(
+                        req.question,
+                        {
+                            "answer": accumulated_answer,
+                            "citations": agent_citations,
+                            "faithfulness": 1.0,
+                            "is_refusal": False
+                        },
+                        mode=req.mode,
+                        ttl=3600
+                    )
+                    yield "event: done\ndata: [DONE]\n\n"
+
+        return StreamingResponse(agent_stream(), media_type="text/event-stream")
+
+    # 5. Standard RAG Retrieval Pipeline (hybrid, dense, rerank, rewrite)
+    retrieval_mode = "hybrid" if effective_mode not in {"dense", "rerank", "rewrite"} else effective_mode
     retrieval_start = time.perf_counter()
-    retriever = get_default_retriever(mode=req.mode)
+    retriever = get_default_retriever(mode=retrieval_mode)
     chunks = retriever.retrieve(req.question, top_k=req.top_k)
     retrieval_ms = (time.perf_counter() - retrieval_start) * 1000
     tracer.record_span_retrieval(trace, req.question, chunks, retrieval_ms)

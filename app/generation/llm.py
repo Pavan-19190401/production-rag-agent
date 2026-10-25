@@ -218,3 +218,92 @@ class LLMClient:
         page = matched_sentences[0][3]
 
         return f"{top_sentence} [{source}, page {page}]"
+
+    def generate_raw(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """
+        Generates raw completion without requiring RetrievedChunk list (e.g. for ReAct loop, agents, intent reasoning).
+        """
+        if self.provider == "openai" and self.openai_client:
+            try:
+                response = self.openai_client.chat.completions.create(
+                    model=settings.LLM_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt or "You are an intelligent AI assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=settings.LLM_TEMPERATURE,
+                    max_tokens=settings.MAX_TOKENS_PER_QUERY
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                try:
+                    fb = self.openai_client.chat.completions.create(
+                        model=settings.FALLBACK_LLM_MODEL,
+                        messages=[
+                            {"role": "system", "content": system_prompt or "You are an intelligent AI assistant."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=settings.LLM_TEMPERATURE,
+                        max_tokens=settings.MAX_TOKENS_PER_QUERY
+                    )
+                    return fb.choices[0].message.content.strip()
+                except Exception as fb_err:
+                    return f"LLM Generation Error: {fb_err}"
+
+        elif self.provider == "gemini" and settings.GEMINI_API_KEY:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.LLM_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {"text": f"{system_prompt or ''}\n\n{prompt}".strip()}
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "temperature": settings.LLM_TEMPERATURE,
+                        "maxOutputTokens": settings.MAX_TOKENS_PER_QUERY
+                    }
+                }
+                with httpx.Client(timeout=30.0) as client:
+                    res = client.post(url, json=payload)
+                    res.raise_for_status()
+                    data = res.json()
+                    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except Exception as e:
+                return f"Gemini Generation Error: {e}"
+
+        return self._generate_mock_raw(prompt)
+
+    def _generate_mock_raw(self, prompt: str) -> str:
+        """
+        Deterministic mock generator for ReAct agent loops and raw text prompts when running offline.
+        """
+        lower = prompt.lower()
+
+        # Handle ReAct agent loop progression
+        if "observation:" in lower:
+            if "error" in lower:
+                return "Thought: An error occurred. I will conclude with a fallback.\nFinal Answer: I was unable to complete the query due to a tool error."
+            if "calculator" in lower or any(char.isdigit() for char in lower.split("observation:")[-1][:50]):
+                obs_part = lower.split("observation:")[-1].strip()
+                return f"Thought: I now have enough information to answer the question.\nFinal Answer: Based on the calculation and retrieved evidence, the computed value is {obs_part.splitlines()[0][:100]}."
+            return "Thought: I now have enough information to answer the question.\nFinal Answer: Based on the retrieved research papers, FlashAttention and LoRA significantly optimize memory hierarchy and compute efficiency. [flash_attention.md, page 1]"
+
+        # Initial ReAct step
+        if "action:" not in lower:
+            if "ratio" in lower or ("calculate" in lower and "parameters" in lower):
+                return "Thought: I need to search the indexed research papers for parameter figures before calculating.\nAction: document_search\nAction Input: LoRA parameters GPT-3"
+            elif any(w in lower for w in ["calculate", "512", "+", "-", "*", "/"]):
+                math_match = re.search(r"[\d\.\s\+\-\*\/\(\)]+", prompt)
+                expr = math_match.group(0).strip() if math_match else "512 / 8"
+                return f"Thought: I need to calculate this arithmetic expression.\nAction: calculator\nAction Input: {expr}"
+            elif "catalog" in lower or "what documents" in lower or "metadata" in lower:
+                return "Thought: I should inspect the indexed document metadata.\nAction: document_metadata\nAction Input: "
+            else:
+                q_match = re.search(r"Question:\s*(.+)", prompt)
+                q_text = q_match.group(1).strip() if q_match else "research architecture"
+                return f"Thought: I need to search the knowledge base for this question.\nAction: document_search\nAction Input: {q_text}"
+
+        return "Final Answer: I don't know based on the provided documents."

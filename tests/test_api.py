@@ -165,3 +165,42 @@ def test_budget_cap_throttling():
     finally:
         budget_manager.daily_budget_usd = original_budget
         budget_manager.daily_spend_usd = original_spend
+
+
+def test_query_agent_mode():
+    response = client.post(
+        "/query",
+        json={"question": "What is the ratio of attention heads?", "mode": "agent"},
+        headers={"x-api-key": VALID_API_KEY}
+    )
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+    body = response.text
+    assert "event: sources" in body
+    assert "event: done" in body
+    ans = parse_sse_answer(body)
+    assert len(ans) > 0
+
+
+def test_query_auto_router_calculator():
+    response = client.post(
+        "/query",
+        json={"question": "calculate 1024 / 16", "mode": "auto"},
+        headers={"x-api-key": VALID_API_KEY}
+    )
+    assert response.status_code == 200
+    body = response.text
+    assert "event: observation" in body
+    assert "64" in body
+
+
+def test_query_auto_router_direct():
+    response = client.post(
+        "/query",
+        json={"question": "hello there assistant", "mode": "auto"},
+        headers={"x-api-key": VALID_API_KEY}
+    )
+    assert response.status_code == 200
+    body = response.text
+    ans = parse_sse_answer(body)
+    assert "research assistant" in ans.lower()

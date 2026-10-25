@@ -11,7 +11,6 @@ import {
   AlertCircle,
   ExternalLink,
   Sparkles,
-  HelpCircle,
   RotateCcw,
   Cpu,
   Layers,
@@ -23,11 +22,13 @@ import {
   FileCode,
   FileSpreadsheet,
   X,
-  ChevronRight,
   BookOpen,
-  Hash
+  Hash,
+  Plus,
+  ArrowUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import LatticeLoader from './LatticeLoader';
 
 export interface Citation {
   source: string;
@@ -53,31 +54,34 @@ export interface Message {
   steps?: AgentStep[];
   feedback?: number;
   isStreaming?: boolean;
-  pinnedSourcesSnapshot?: string[];
+  status?: 'working' | 'done' | 'error';
+  elapsedSeconds?: number;
 }
 
 export interface DocumentItem {
+  id: number;
   name: string;
   title: string;
   type: string;
+  subtitle: string;
   chunks: number;
   pages: number;
 }
 
 const DEFAULT_DOCUMENTS: DocumentItem[] = [
-  { name: 'attention_paper.pdf', title: 'Attention Is All You Need', type: 'pdf', chunks: 27, pages: 15 },
-  { name: 'flash_attention.md', title: 'FlashAttention IO-Aware Tiling', type: 'md', chunks: 6, pages: 1 },
-  { name: 'lora_paper.pdf', title: 'LoRA Low-Rank Adaptation', type: 'pdf', chunks: 66, pages: 26 },
-  { name: 'rag_paper.pdf', title: 'Retrieval-Augmented Generation', type: 'pdf', chunks: 47, pages: 19 },
-  { name: 'rag_system_architecture.html', title: 'Enterprise RAG Architecture', type: 'html', chunks: 1, pages: 1 }
+  { id: 1, name: 'attention_paper.pdf', title: 'attention_paper.pdf', subtitle: 'PDF 15 pages', type: 'pdf', chunks: 27, pages: 15 },
+  { id: 2, name: 'flash_attention.md', title: 'flash_attention.md', subtitle: 'Note 1,400 words', type: 'md', chunks: 6, pages: 1 },
+  { id: 3, name: 'lora_paper.pdf', title: 'lora_paper.pdf', subtitle: 'PDF 26 pages', type: 'pdf', chunks: 66, pages: 26 },
+  { id: 4, name: 'rag_paper.pdf', title: 'rag_paper.pdf', subtitle: 'PDF 19 pages', type: 'pdf', chunks: 47, pages: 19 },
+  { id: 5, name: 'rag_system_architecture.html', title: 'rag_system_architecture.html', subtitle: 'Doc Production Arch', type: 'html', chunks: 1, pages: 1 }
 ];
 
 const EXAMPLE_QUESTIONS = [
-  { label: 'FlashAttention Tiling', text: 'What is FlashAttention and how does tiling help?' },
-  { label: 'LoRA vs GPT-3 (Agent)', text: 'Calculate the ratio of parameters in LoRA vs GPT-3' },
-  { label: 'Transformer Heads', text: 'What are the dimensions of d_model and heads in the base Transformer?' },
-  { label: 'LoRA Adaptation', text: 'What is the mathematical formulation of LoRA weight adaptation?' },
-  { label: 'Refusal Test', text: 'What is the return and refund policy for annual enterprise subscription plans?' }
+  "What is FlashAttention and how does tiling help?",
+  "Which segment or attention head dimensions held up in the Transformer base model?",
+  "Calculate the ratio of parameters in LoRA vs GPT-3",
+  "What is the mathematical formulation of LoRA weight adaptation?",
+  "What is the return and refund policy for annual enterprise subscription plans?"
 ];
 
 export function AIChat7() {
@@ -85,7 +89,25 @@ export function AIChat7() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I am your research assistant equipped with **pinned sources & verified in-line citations**.\n\nYou can pin/unpin specific arXiv research papers and technical docs using the toolbar above to ground responses strictly on your selected context."
+      content: "The quickest lever is re-engaging the two downgraded research architectures. [2] FlashAttention computes exact softmax without storing the full N × N matrix in HBM by using tiling. [2] Meanwhile, LoRA freezes pre-trained model weights and injects trainable rank decomposition matrices. [3]",
+      status: 'done',
+      elapsedSeconds: 0.9,
+      citations: [
+        {
+          source: 'flash_attention.md',
+          page: 1,
+          chunk_id: 'flash_attention.md_p1_Tiling_Algorithm_c0',
+          score: 0.0328,
+          snippet: '## Tiling Algorithm\nFlashAttention computes exact softmax without storing the full N x N matrix in HBM by using tiling.'
+        },
+        {
+          source: 'lora_paper.pdf',
+          page: 1,
+          chunk_id: 'lora_paper.pdf_p1_Abstract_c0',
+          score: 0.0315,
+          snippet: 'We propose Low-Rank Adaptation (LoRA), which freezes the pre-trained model weights and injects trainable rank decomposition matrices.'
+        }
+      ]
     }
   ]);
   const [input, setInput] = useState('');
@@ -93,11 +115,11 @@ export function AIChat7() {
   const [selectedMode, setSelectedMode] = useState<string>('hybrid');
   const [documents, setDocuments] = useState<DocumentItem[]>(DEFAULT_DOCUMENTS);
   const [pinnedSources, setPinnedSources] = useState<string[]>(DEFAULT_DOCUMENTS.map(d => d.name));
-  const [showPinnedDrawer, setShowPinnedDrawer] = useState(false);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -113,12 +135,21 @@ export function AIChat7() {
         if (res.ok) {
           const data = await res.json();
           if (data.documents && data.documents.length > 0) {
-            setDocuments(data.documents);
-            setPinnedSources(prev => prev.length > 0 ? prev : data.documents.map((d: DocumentItem) => d.name));
+            const formatted: DocumentItem[] = data.documents.map((d: any, idx: number) => ({
+              id: idx + 1,
+              name: d.name,
+              title: d.name,
+              subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
+              type: d.type,
+              chunks: d.chunks,
+              pages: d.pages
+            }));
+            setDocuments(formatted);
+            setPinnedSources(formatted.map(d => d.name));
           }
         }
       } catch (e) {
-        // Fallback to default documents
+        // Fallback to defaults
       }
     }
     fetchDocuments();
@@ -137,6 +168,12 @@ export function AIChat7() {
   const pinAll = () => setPinnedSources(documents.map(d => d.name));
   const clearPins = () => setPinnedSources([]);
 
+  // Source number mapping for citation pills
+  const getSourceNumber = (sourceName: string): number => {
+    const doc = documents.find(d => d.name.toLowerCase() === sourceName.toLowerCase());
+    return doc ? doc.id : 1;
+  };
+
   const handleSend = async (questionText?: string) => {
     const q = (questionText || input).trim();
     if (!q || loading) return;
@@ -144,6 +181,7 @@ export function AIChat7() {
     setInput('');
     const userMsgId = `usr-${Date.now()}`;
     const botMsgId = `bot-${Date.now()}`;
+    const startTime = performance.now();
 
     setMessages(prev => [
       ...prev,
@@ -155,7 +193,7 @@ export function AIChat7() {
         citations: [],
         steps: [],
         isStreaming: true,
-        pinnedSourcesSnapshot: [...pinnedSources]
+        status: 'working'
       }
     ]);
     setLoading(true);
@@ -275,14 +313,22 @@ export function AIChat7() {
         }
       }
 
+      const elapsed = Math.round((performance.now() - startTime) / 100) / 10;
       setMessages(prev =>
-        prev.map(m => m.id === botMsgId ? { ...m, isStreaming: false } : m)
+        prev.map(m => m.id === botMsgId ? { ...m, isStreaming: false, status: 'done', elapsedSeconds: elapsed } : m)
       );
     } catch (err: any) {
+      const elapsed = Math.round((performance.now() - startTime) / 100) / 10;
       setMessages(prev =>
         prev.map(m =>
           m.id === botMsgId
-            ? { ...m, content: `Error: Unable to complete query (${err.message}). Verify API service is running.`, isStreaming: false }
+            ? {
+                ...m,
+                content: `Error: Unable to complete query (${err.message}). Verify API service is running.`,
+                isStreaming: false,
+                status: 'error',
+                elapsedSeconds: elapsed
+              }
             : m
         )
       );
@@ -306,7 +352,7 @@ export function AIChat7() {
         body: JSON.stringify({
           request_id: messageId,
           rating: rating,
-          comment: rating > 0 ? "Thumbs up (Grounded)" : "Thumbs down (Ungrounded)"
+          comment: rating > 0 ? "Thumbs up" : "Thumbs down"
         }),
       });
     } catch (e) {
@@ -333,19 +379,29 @@ export function AIChat7() {
 
       if (res.ok) {
         const data = await res.json();
-        setUploadStatus(`Indexed ${data.processed_files} file(s), ${data.chunks_indexed} chunk(s) successfully!`);
+        setUploadStatus(`Indexed ${data.processed_files} file(s), ${data.chunks_indexed} chunk(s)!`);
+        setShowUploadModal(false);
         // Refresh document list
         const docRes = await fetch(`${API_URL}/documents`, { headers: { 'x-api-key': API_KEY } });
         if (docRes.ok) {
           const docData = await docRes.json();
-          setDocuments(docData.documents);
+          const formatted: DocumentItem[] = docData.documents.map((d: any, idx: number) => ({
+            id: idx + 1,
+            name: d.name,
+            title: d.name,
+            subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
+            type: d.type,
+            chunks: d.chunks,
+            pages: d.pages
+          }));
+          setDocuments(formatted);
           setPinnedSources(prev => [...prev, file.name]);
         }
       } else {
         setUploadStatus("Upload failed. Verify server status.");
       }
     } catch (err) {
-      setUploadStatus("Upload failed due to network error.");
+      setUploadStatus("Upload failed due to connection error.");
     } finally {
       setUploading(false);
       setTimeout(() => setUploadStatus(null), 5000);
@@ -358,47 +414,162 @@ export function AIChat7() {
     setTimeout(() => setCopiedSnippet(false), 2000);
   };
 
-  const getDocTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return <FileText className="w-3.5 h-3.5 text-rose-600" />;
-      case 'md':
-        return <FileCode className="w-3.5 h-3.5 text-sky-600" />;
-      case 'html':
-        return <BookOpen className="w-3.5 h-3.5 text-amber-600" />;
-      default:
-        return <FileSpreadsheet className="w-3.5 h-3.5 text-slate-600" />;
-    }
+  // Render text with clickable numbered citation pills like in the image
+  const renderFormattedText = (text: string, citations?: Citation[]) => {
+    if (!text) return null;
+
+    // Pattern matching [filename, page X] or [1], [2], etc.
+    const parts = text.split(/(\[[^\]]+\])/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('[') && part.endsWith(']')) {
+        const inner = part.slice(1, -1).trim();
+
+        // Check if numeric like [1] or [2]
+        if (/^\d+$/.test(inner)) {
+          const docId = parseInt(inner, 10);
+          const matchedDoc = documents.find(d => d.id === docId);
+          const matchedCitation = citations?.find(c =>
+            matchedDoc ? c.source.toLowerCase() === matchedDoc.name.toLowerCase() : false
+          ) || citations?.[docId - 1];
+
+          return (
+            <button
+              key={index}
+              onClick={() => {
+                if (matchedCitation) {
+                  setSelectedCitation(matchedCitation);
+                } else if (matchedDoc) {
+                  setSelectedCitation({
+                    source: matchedDoc.name,
+                    page: 1,
+                    chunk_id: `${matchedDoc.name}_p1_c0`,
+                    score: 0.032,
+                    snippet: `Pinned source reference: ${matchedDoc.title} (${matchedDoc.subtitle})`
+                  });
+                }
+              }}
+              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383840] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
+              title={`View Source #${docId}: ${matchedDoc?.name || ''}`}
+            >
+              {docId}
+            </button>
+          );
+        }
+
+        // Check if [source.pdf, page X]
+        const matchedCitation = citations?.find(c => inner.toLowerCase().includes(c.source.toLowerCase()));
+        if (matchedCitation) {
+          const docNum = getSourceNumber(matchedCitation.source);
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedCitation(matchedCitation)}
+              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383840] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
+              title={`View Citation: ${matchedCitation.source} (p. ${matchedCitation.page})`}
+            >
+              {docNum}
+            </button>
+          );
+        }
+      }
+      return <span key={index}>{part}</span>;
+    });
   };
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-8.5rem)] max-w-7xl mx-auto w-full">
-      {/* AI Chat 7 Top Controls & Pinned Sources Toolbar */}
-      <div className="mb-3 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-slate-200/90 rounded-xl px-3 py-2 shadow-2xs">
-          {/* Left: Pinned Sources Trigger & Pipeline Mode */}
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setShowPinnedDrawer(!showPinnedDrawer)}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all",
-                pinnedSources.length > 0
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-              )}
-            >
-              <Pin className={cn("w-3.5 h-3.5", pinnedSources.length > 0 ? "fill-emerald-600 text-emerald-600" : "text-slate-400")} />
-              <span>Pinned Sources ({pinnedSources.length}/{documents.length})</span>
-            </button>
+  const totalCitationsCount = messages.reduce((acc, m) => acc + (m.citations?.length || 0), 0);
 
-            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-              <Layers className="w-3.5 h-3.5 text-slate-400" />
-              <label htmlFor="pipeline-mode" className="text-xs text-slate-500 font-medium hidden sm:inline">Mode:</label>
+  return (
+    <div className="flex h-[calc(100vh-5.5rem)] w-full bg-[#0c0c0e] text-[#f4f4f5] antialiased select-none font-sans overflow-hidden">
+      {/* ------------------------------------------------------------- */}
+      {/* LEFT SIDEBAR: Pinned Sources (Exact layout & dark styling)   */}
+      {/* ------------------------------------------------------------- */}
+      <aside className="w-72 lg:w-80 flex-shrink-0 flex flex-col p-4 border-r border-[#1e1e24] bg-[#0c0c0e]">
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between pb-3 mb-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <Pin className="w-3.5 h-3.5 text-slate-400 fill-slate-400 rotate-45" />
+            <span>Pinned sources</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <button onClick={pinAll} className="hover:text-slate-300 transition-colors">All</button>
+            <span>•</span>
+            <button onClick={clearPins} className="hover:text-slate-300 transition-colors">Clear</button>
+          </div>
+        </div>
+
+        {/* Pinned Sources Container Card */}
+        <div className="flex-1 overflow-y-auto space-y-1 pr-1 border border-[#1f1f23] bg-[#111114] rounded-2xl p-2 shadow-inner scrollbar-thin scrollbar-thumb-zinc-800">
+          {documents.map((doc) => {
+            const isPinned = pinnedSources.includes(doc.name);
+            return (
+              <div
+                key={doc.id}
+                onClick={() => togglePin(doc.name)}
+                className={cn(
+                  "group flex items-start gap-3 p-2.5 rounded-xl border transition-all cursor-pointer",
+                  isPinned
+                    ? "bg-[#16161a] border-[#27272e] hover:border-[#383842]"
+                    : "bg-transparent border-transparent opacity-40 hover:opacity-75"
+                )}
+              >
+                {/* Numbered Square Badge */}
+                <div className="w-6 h-6 flex-shrink-0 rounded-md bg-[#222228] border border-[#2d2d35] flex items-center justify-center text-xs font-mono font-medium text-slate-300">
+                  {doc.id}
+                </div>
+
+                {/* Document Information */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-200 truncate leading-tight group-hover:text-white">
+                    {doc.title}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                    {doc.subtitle}
+                  </p>
+                </div>
+
+                {/* Pin Status Icon */}
+                <div className="flex-shrink-0 pt-0.5">
+                  {isPinned ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shadow-[0_0_8px_#10b981]" />
+                  ) : (
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Upload Trigger Button */}
+        <div className="pt-3">
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium rounded-xl border border-[#27272e] bg-[#141418] hover:bg-[#1a1a20] text-slate-300 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Upload Document to Catalog</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ------------------------------------------------------------- */}
+      {/* RIGHT MAIN AREA: Chat Thread & Input Canvas                  */}
+      {/* ------------------------------------------------------------- */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e]">
+        {/* Top Header Bar */}
+        <div className="h-14 flex items-center justify-between px-6 border-b border-[#1e1e24] bg-[#0c0c0e]">
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold text-slate-200">
+              AI Research & Architecture Review
+            </h2>
+
+            {/* Pipeline Mode Selector */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-[#222226]">
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
               <select
-                id="pipeline-mode"
                 value={selectedMode}
                 onChange={(e) => setSelectedMode(e.target.value)}
-                className="text-xs bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-lg px-2 py-1 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                className="text-xs bg-[#16161a] border border-[#27272e] text-slate-300 rounded-lg px-2 py-1 font-medium focus:ring-1 focus:ring-emerald-500 focus:outline-hidden"
               >
                 <option value="hybrid">⚡ Hybrid RRF (BM25 + Dense)</option>
                 <option value="dense">🎯 Dense Vector (BGE-Small)</option>
@@ -410,287 +581,275 @@ export function AIChat7() {
             </div>
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2">
-            <label className="cursor-pointer text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 transition-colors flex items-center gap-1">
-              <Upload className="w-3.5 h-3.5" />
-              <span>Upload Doc</span>
-              <input type="file" className="hidden" accept=".pdf,.md,.html,.txt" onChange={handleFileUpload} disabled={uploading} />
-            </label>
+          {/* Right Cited Badge */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400 font-medium">
+              <strong className="text-slate-200 font-mono">{totalCitationsCount}</strong> sources Cited
+            </span>
+
             <button
-              onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: "Chat reset. How can I assist you with the pinned sources?" }])}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-              title="Reset Chat Session"
+              onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: "Chat history cleared. How can I assist you with your pinned sources?" }])}
+              className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-[#1c1c21] transition-colors"
+              title="Reset Chat"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Pinned Sources Slide-Out Bar */}
-        {showPinnedDrawer && (
-          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 shadow-inner animate-in fade-in duration-150">
-            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                <Filter className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Knowledge Base Filter (Grounded Context Restriction)</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <button onClick={pinAll} className="text-emerald-700 hover:underline font-medium">Pin All</button>
-                <span className="text-slate-300">|</span>
-                <button onClick={clearPins} className="text-slate-500 hover:underline">Clear Pins</button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {documents.map((doc) => {
-                const isPinned = pinnedSources.includes(doc.name);
-                return (
-                  <button
-                    key={doc.name}
-                    onClick={() => togglePin(doc.name)}
-                    className={cn(
-                      "text-left p-2 rounded-lg border text-xs flex items-center justify-between transition-all",
-                      isPinned
-                        ? "bg-white border-emerald-300 text-slate-900 shadow-2xs ring-1 ring-emerald-200"
-                        : "bg-slate-100/60 border-slate-200 text-slate-400 hover:bg-slate-100"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      {getDocTypeIcon(doc.type)}
-                      <div className="truncate">
-                        <p className={cn("font-medium truncate", isPinned ? "text-slate-900" : "text-slate-500")}>
-                          {doc.title || doc.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono">
-                          {doc.chunks} chunks • {doc.pages} page{doc.pages > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                    {isPinned ? (
-                      <Pin className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 flex-shrink-0" />
-                    ) : (
-                      <PinOff className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Upload Notification Banner */}
-        {uploadStatus && (
-          <div className="p-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>{uploadStatus}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Main Chat Canvas with Pinned Sources Badges & Citations */}
-      <div className="flex-1 overflow-y-auto bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4">
-        {/* Quick Example Starters (when conversation is short) */}
-        {messages.length <= 1 && (
-          <div className="my-2 p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              Verified Prompt Starters
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {EXAMPLE_QUESTIONS.map((ex, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(ex.text)}
-                  disabled={loading}
-                  className="text-left text-xs bg-white hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 text-slate-700 p-2.5 rounded-lg transition-all shadow-2xs disabled:opacity-50"
-                >
-                  <span className="font-semibold text-emerald-800 block text-[11px] mb-0.5">{ex.label}</span>
-                  <span className="text-slate-600 truncate block">{ex.text}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Message Thread */}
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-          >
+        {/* Message Stream */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-800">
+          {messages.map((msg) => (
             <div
+              key={msg.id}
               className={cn(
-                "max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-                msg.role === 'user'
-                  ? 'bg-emerald-600 text-white rounded-br-none shadow-xs'
-                  : 'bg-slate-50 text-slate-900 border border-slate-200/80 rounded-bl-none shadow-2xs'
+                "flex flex-col",
+                msg.role === 'user' ? "items-end" : "items-start"
               )}
             >
-              {/* Agent Reasoning Trace Display */}
-              {msg.steps && msg.steps.length > 0 && (
-                <details className="mb-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-2.5 text-xs text-slate-700 group" open>
-                  <summary className="font-semibold text-indigo-900 cursor-pointer flex items-center gap-1.5 select-none hover:text-indigo-950">
-                    <Cpu className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>ReAct Reasoning Trace ({msg.steps.length} event{msg.steps.length > 1 ? 's' : ''})</span>
-                  </summary>
-                  <div className="mt-2.5 space-y-2 pl-2 border-l-2 border-indigo-400 text-xs">
-                    {msg.steps.map((st, i) => (
-                      <div key={i} className="space-y-1">
-                        {st.type === 'thought' ? (
-                          <div className="text-slate-800">
-                            <span className="font-semibold text-indigo-700">Step {st.iteration} Thought:</span> {st.content}
-                            {st.tool && (
-                              <div className="mt-0.5 text-slate-600 font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-indigo-200 inline-block">
-                                &rarr; Action: <strong className="text-indigo-900">{st.tool}</strong>({st.tool_input || '""'})
+              {msg.role === 'user' ? (
+                /* User Prompt Bubble (Sleek dark bubble right aligned) */
+                <div className="max-w-xl bg-[#1d1d22] text-[#f4f4f5] px-4 py-2.5 rounded-2xl rounded-br-xs text-sm border border-[#2a2a32] shadow-xs">
+                  {msg.content}
+                </div>
+              ) : (
+                /* Assistant Response (Left aligned text with numbered pills) */
+                <div className="max-w-3xl space-y-2">
+                  {/* LatticeLoader Component from React Bits */}
+                  {msg.status === 'working' ? (
+                    <div className="py-1">
+                      <LatticeLoader
+                        status="working"
+                        label="Thinking"
+                        pattern="orbit"
+                        grid={3}
+                        shape="round"
+                        doneColor="#22c55e"
+                        errorColor="#ef4444"
+                        cellSize={6}
+                        gap={2}
+                        fontSize={13}
+                        step={90}
+                        color="#a1a1aa"
+                        showTimer={true}
+                      />
+                    </div>
+                  ) : msg.elapsedSeconds != null ? (
+                    <div className="py-0.5">
+                      <LatticeLoader
+                        status={msg.status === 'error' ? 'error' : 'done'}
+                        label="Thinking"
+                        doneLabel="Done in"
+                        errorLabel="Failed after"
+                        pattern="orbit"
+                        grid={3}
+                        shape="round"
+                        doneColor="#22c55e"
+                        errorColor="#ef4444"
+                        cellSize={6}
+                        gap={2}
+                        fontSize={12}
+                        color="#71717a"
+                        elapsed={msg.elapsedSeconds}
+                        showTimer={true}
+                      />
+                    </div>
+                  ) : null}
+
+                  {/* ReAct Agent Reasoning Trace (if applicable) */}
+                  {msg.steps && msg.steps.length > 0 && (
+                    <details className="rounded-xl border border-[#27272e] bg-[#131317] p-3 text-xs text-slate-300">
+                      <summary className="font-semibold text-emerald-400 cursor-pointer flex items-center gap-1.5 select-none hover:text-emerald-300">
+                        <Cpu className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>ReAct Reasoning Trace ({msg.steps.length} step{msg.steps.length > 1 ? 's' : ''})</span>
+                      </summary>
+                      <div className="mt-2.5 space-y-2 pl-2 border-l border-emerald-500/60 text-xs">
+                        {msg.steps.map((st, i) => (
+                          <div key={i} className="space-y-1">
+                            {st.type === 'thought' ? (
+                              <div>
+                                <span className="font-semibold text-indigo-400">Step {st.iteration} Thought:</span> {st.content}
+                                {st.tool && (
+                                  <div className="mt-0.5 text-slate-400 font-mono text-[11px] bg-[#1a1a20] px-2 py-0.5 rounded border border-[#2e2e38] inline-block">
+                                    &rarr; Action: <strong className="text-slate-200">{st.tool}</strong>({st.tool_input || '""'})
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="bg-[#18181d] p-2 rounded-lg border border-[#27272e] font-mono text-[11px] text-slate-400 max-h-32 overflow-y-auto">
+                                <span className="font-semibold text-emerald-400 font-sans block text-xs">Observation ({st.tool}):</span>
+                                {st.content}
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <div className="bg-white p-2 rounded-lg border border-slate-200 font-mono text-[11px] text-slate-600 max-h-32 overflow-y-auto">
-                            <span className="font-semibold text-emerald-700 font-sans block text-xs">Observation ({st.tool}):</span>
-                            {st.content}
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </details>
-              )}
+                    </details>
+                  )}
 
-              {/* Message Content */}
-              <div className="whitespace-pre-wrap">{msg.content || (msg.isStreaming ? "Retrieving evidence & generating answer..." : "")}</div>
-
-              {/* In-line Citations Chips Bar */}
-              {msg.citations && msg.citations.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-200/80">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <BookOpen className="w-3 h-3 text-emerald-600" />
-                      Pinned Citations & Source Evidence:
-                    </span>
-                    <span className="text-[10px] text-slate-400">Click to preview chunk</span>
+                  {/* Answer Text with Numbered Citations */}
+                  <div className="text-sm leading-relaxed text-[#d4d4d8] font-normal whitespace-pre-wrap select-text">
+                    {renderFormattedText(msg.content, msg.citations)}
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {msg.citations.map((c, i) => (
+
+                  {/* Citations Preview Strip */}
+                  {msg.citations && msg.citations.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {msg.citations.map((c, i) => {
+                        const num = getSourceNumber(c.source);
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedCitation(c)}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#16161a] hover:bg-[#202026] text-slate-300 border border-[#27272e] transition-colors"
+                          >
+                            <span className="w-4 h-4 rounded bg-[#24242c] text-slate-300 font-mono text-[10px] flex items-center justify-center">
+                              {num}
+                            </span>
+                            <span className="truncate max-w-[140px]">{c.source}</span>
+                            <span className="text-slate-500 font-mono text-[10px]">p.{c.page}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Feedback Buttons */}
+                  {msg.id !== 'welcome' && !msg.isStreaming && (
+                    <div className="flex items-center gap-2 pt-1 text-xs text-slate-500">
                       <button
-                        key={i}
-                        onClick={() => setSelectedCitation(c)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 transition-all shadow-2xs hover:border-emerald-400 hover:shadow-xs"
+                        onClick={() => handleFeedback(msg.id, 1)}
+                        className={cn("p-1 hover:text-slate-300 transition-colors", msg.feedback === 1 && "text-emerald-400 font-bold")}
+                        title="Thumbs Up"
                       >
-                        <FileText className="w-3 h-3 text-emerald-600" />
-                        <span className="font-semibold">{c.source}</span>
-                        <span className="text-emerald-600/70">(p. {c.page})</span>
+                        <ThumbsUp className="w-3.5 h-3.5" />
                       </button>
-                    ))}
-                  </div>
+                      <button
+                        onClick={() => handleFeedback(msg.id, -1)}
+                        className={cn("p-1 hover:text-slate-300 transition-colors", msg.feedback === -1 && "text-rose-400 font-bold")}
+                        title="Thumbs Down"
+                      >
+                        <ThumbsDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Assistant Response Feedback Toolbar */}
-            {msg.role === 'assistant' && msg.id !== 'welcome' && !msg.isStreaming && (
-              <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400 pl-1">
-                <span>Grounded on pinned context?</span>
-                <button
-                  onClick={() => handleFeedback(msg.id, 1)}
-                  className={cn("p-1 rounded hover:bg-slate-100 transition-colors", msg.feedback === 1 && "text-emerald-600 font-bold")}
-                  title="Thumbs up (Grounded & Accurate)"
-                >
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleFeedback(msg.id, -1)}
-                  className={cn("p-1 rounded hover:bg-slate-100 transition-colors", msg.feedback === -1 && "text-rose-600 font-bold")}
-                  title="Thumbs down (Incorrect or Hallucinated)"
-                >
-                  <ThumbsDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* AI Chat 7 Input Canvas */}
-      <form
-        onSubmit={e => {
-          e.preventDefault();
-          handleSend();
-        }}
-        className="mt-3 bg-white border border-slate-300 rounded-2xl p-2 shadow-xs transition-all focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent"
-      >
-        <div className="flex items-center justify-between px-2 pb-1 text-[11px] text-slate-400 border-b border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <Pin className="w-3 h-3 text-emerald-600" />
-            <span>Grounded on: <strong className="text-slate-600">{pinnedSources.length} pinned source(s)</strong></span>
-          </div>
-          <span className="font-mono text-[10px]">Mode: {selectedMode.toUpperCase()}</span>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex items-center gap-2 mt-1">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Ask a technical question over pinned research papers..."
-            disabled={loading}
-            className="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-hidden disabled:bg-slate-50 text-slate-900 placeholder-slate-400"
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+        {/* ----------------------------------------------------------- */}
+        {/* BOTTOM INPUT AREA: Rounded Card matching the image design   */}
+        {/* ----------------------------------------------------------- */}
+        <div className="p-6 pt-2">
+          {/* Example Prompts Pills */}
+          {messages.length <= 1 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {EXAMPLE_QUESTIONS.map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSend(q)}
+                  disabled={loading}
+                  className="text-xs bg-[#141418] hover:bg-[#1c1c22] border border-[#222228] text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="rounded-2xl border border-[#27272e] bg-[#141418] focus-within:border-[#3f3f4a] p-3 shadow-lg transition-all"
           >
-            <Send className="w-3.5 h-3.5" />
-            <span>Send</span>
-          </button>
-        </div>
-      </form>
+            {/* Input field */}
+            <textarea
+              rows={2}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Ask anything"
+              disabled={loading}
+              className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-hidden resize-none leading-relaxed"
+            />
 
-      {/* Citation Slide-Over / Drawer Modal */}
+            {/* Bottom Controls Row: '+' Button on Left, Send Button on Right */}
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={() => setShowUploadModal(true)}
+                className="w-7 h-7 rounded-lg bg-[#1f1f26] hover:bg-[#282832] text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors"
+                title="Add Source / Upload Document"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="w-8 h-8 rounded-lg bg-[#272730] hover:bg-[#32323e] text-slate-200 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-xs"
+                title="Send Message"
+              >
+                <ArrowUp className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+
+      {/* ------------------------------------------------------------- */}
+      {/* CITATION INSPECTOR MODAL / SLIDE-OVER                         */}
+      {/* ------------------------------------------------------------- */}
       {selectedCitation && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#141418] border border-[#27272e] text-[#f4f4f5] rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#222228]">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-semibold text-slate-900">{selectedCitation.source}</h3>
-                <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
+                <div className="w-6 h-6 rounded bg-[#222228] border border-[#2d2d35] flex items-center justify-center text-xs font-mono font-medium text-slate-300">
+                  {getSourceNumber(selectedCitation.source)}
+                </div>
+                <h3 className="font-semibold text-sm text-slate-200">{selectedCitation.source}</h3>
+                <span className="text-[11px] font-mono bg-emerald-950/80 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full">
                   Page {selectedCitation.page}
                 </span>
               </div>
               <button
                 onClick={() => setSelectedCitation(null)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-bold p-1 rounded-md"
+                className="text-slate-400 hover:text-slate-200 text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
             <div className="my-4 space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="flex items-center gap-1 font-mono">
-                  <Hash className="w-3 h-3 text-slate-400" />
-                  Chunk ID: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">{selectedCitation.chunk_id}</code>
-                </span>
-                <span>Retrieval Score: <strong className="text-emerald-700 font-mono">{selectedCitation.score}</strong></span>
+              <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span>Chunk: <code className="bg-[#1f1f26] px-1 py-0.5 rounded text-slate-300">{selectedCitation.chunk_id}</code></span>
+                <span>Score: <strong className="text-emerald-400">{selectedCitation.score}</strong></span>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 text-xs leading-relaxed text-slate-800 max-h-64 overflow-y-auto whitespace-pre-wrap font-sans">
+              <div className="bg-[#0e0e11] p-3.5 rounded-xl border border-[#222228] text-xs leading-relaxed text-slate-300 max-h-60 overflow-y-auto whitespace-pre-wrap font-sans">
                 {selectedCitation.snippet}
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-3 border-t border-[#222228]">
               <button
                 onClick={() => copyToClipboard(selectedCitation.snippet)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#1e1e24] hover:bg-[#27272f] rounded-lg transition-colors border border-[#2c2c36]"
               >
                 {copiedSnippet ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Copied!</span>
                   </>
                 ) : (
@@ -703,9 +862,63 @@ export function AIChat7() {
 
               <button
                 onClick={() => setSelectedCitation(null)}
-                className="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-2xs"
+                className="px-4 py-1.5 text-xs font-semibold bg-slate-200 hover:bg-white text-slate-900 rounded-lg transition-colors"
               >
-                Close Drawer
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* UPLOAD DOCUMENT MODAL                                         */}
+      {/* ------------------------------------------------------------- */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#141418] border border-[#27272e] text-[#f4f4f5] rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#222228]">
+              <h3 className="font-semibold text-sm text-slate-200 flex items-center gap-2">
+                <Upload className="w-4 h-4 text-emerald-400" />
+                Upload Document to Catalog
+              </h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-slate-400 hover:text-slate-200 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="my-4 space-y-3">
+              <p className="text-xs text-slate-400">
+                Upload a research paper or documentation file (.pdf, .md, .html, .txt). The offline pipeline will sanitize, chunk, compute BGE vector embeddings, and pin it to your active session.
+              </p>
+
+              <label className="border-2 border-dashed border-[#2b2b36] hover:border-emerald-500/60 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors bg-[#0f0f13]">
+                <Upload className="w-6 h-6 text-slate-400" />
+                <span className="text-xs text-slate-300 font-medium">Select file to ingest</span>
+                <span className="text-[10px] text-slate-500">PDF, Markdown, HTML, TXT</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.md,.html,.txt"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+              </label>
+
+              {uploadStatus && (
+                <p className="text-xs text-emerald-400 text-center">{uploadStatus}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#222228]">
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="px-4 py-1.5 text-xs text-slate-300 hover:text-white"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -714,4 +927,5 @@ export function AIChat7() {
     </div>
   );
 }
+
 export default AIChat7;

@@ -51,6 +51,20 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+@app.on_event("startup")
+async def startup_prewarm():
+    """Pre-warms BGE dense embeddings and Qdrant client to eliminate cold-start latency."""
+    try:
+        import asyncio
+        from ingest.ingest import get_embed_model, get_qdrant_client
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, get_embed_model)
+        await loop.run_in_executor(None, get_qdrant_client)
+        logger.info("Startup pre-warming complete: BGE model and Qdrant client cached in memory.")
+    except Exception as e:
+        logger.warning(f"Startup pre-warming non-fatal warning: {e}")
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -337,14 +351,16 @@ async def ingest_endpoint(
     raw_dir = Path(settings.DATA_RAW_DIR)
     raw_dir.mkdir(parents=True, exist_ok=True)
 
+    target_file = None
     if file:
         file_path = raw_dir / file.filename
         content = await file.read()
         file_path.write_bytes(content)
         logger.info(f"Saved uploaded document: {file.filename}")
+        target_file = file_path
 
-    # Run ingestion job
-    result = run_ingestion()
+    # Run ingestion job (scoped to target_file for sub-second execution)
+    result = run_ingestion(target_file=target_file)
     return IngestResponse(
         status=result.get("status", "unknown"),
         processed_files=result.get("processed_files", 0),

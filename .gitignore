@@ -20,8 +20,6 @@ htmlcov/
 qdrant_data/
 *.sqlite3
 *.db
-bm25_index.pkl
-ingest_manifest.json
 
 # Node & Frontend
 node_modules/

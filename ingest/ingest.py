@@ -19,6 +19,15 @@ MANIFEST_PATH = BASE_DIR / "data" / "processed" / "ingest_manifest.json"
 BM25_STORE_PATH = BASE_DIR / "data" / "processed" / "bm25_index.pkl"
 
 _cached_qdrant_client: Optional[QdrantClient] = None
+_cached_embed_model: Optional[TextEmbedding] = None
+
+
+def get_embed_model() -> TextEmbedding:
+    """Instantiates and caches a singleton TextEmbedding model."""
+    global _cached_embed_model
+    if _cached_embed_model is None:
+        _cached_embed_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+    return _cached_embed_model
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -85,6 +94,7 @@ def deterministic_uuid(val: str) -> str:
 
 def run_ingestion(
     input_dir: Optional[Path] = None,
+    target_file: Optional[Path] = None,
     chunk_size: int = 512,
     chunk_overlap: int = 50,
     strategy: str = "recursive",
@@ -92,10 +102,10 @@ def run_ingestion(
 ) -> Dict[str, Any]:
     """
     Executes idempotent document ingestion:
-    1. Scans raw directory for documents
+    1. Scans raw directory for documents (or targets single file if specified)
     2. Compares SHA-256 hashes against manifest
     3. Chunks modified/new documents
-    4. Computes BGE dense embeddings
+    4. Computes BGE dense embeddings using cached singleton
     5. Upserts points into Qdrant
     6. Updates manifest and BM25 index corpus
     """
@@ -106,13 +116,16 @@ def run_ingestion(
     manifest = load_manifest() if not force else {}
     files_to_process: List[Path] = []
 
-    supported_exts = {".pdf", ".md", ".markdown", ".html", ".htm", ".txt"}
-    for f in raw_dir.rglob("*"):
-        if f.is_file() and f.suffix.lower() in supported_exts:
-            file_hash = calculate_file_hash(f)
-            rel_path = str(f.relative_to(raw_dir))
-            if manifest.get(rel_path) != file_hash:
-                files_to_process.append(f)
+    if target_file and target_file.is_file():
+        files_to_process = [target_file]
+    else:
+        supported_exts = {".pdf", ".md", ".markdown", ".html", ".htm", ".txt"}
+        for f in raw_dir.rglob("*"):
+            if f.is_file() and f.suffix.lower() in supported_exts:
+                file_hash = calculate_file_hash(f)
+                rel_path = str(f.relative_to(raw_dir))
+                if manifest.get(rel_path) != file_hash:
+                    files_to_process.append(f)
 
     if not files_to_process and not force:
         print("Idempotent check: All documents are up-to-date. Nothing to ingest.")
@@ -126,7 +139,10 @@ def run_ingestion(
     for f in files_to_process:
         docs = load_file(f)
         loaded_docs.extend(docs)
-        rel_path = str(f.relative_to(raw_dir))
+        try:
+            rel_path = str(f.relative_to(raw_dir))
+        except ValueError:
+            rel_path = f.name
         new_manifest_entries[rel_path] = calculate_file_hash(f)
 
     if not loaded_docs:
@@ -141,9 +157,9 @@ def run_ingestion(
     if not chunks:
         return {"status": "no_chunks", "processed_files": len(files_to_process), "chunks_indexed": 0}
 
-    # 3. Generate Embeddings using BGE
+    # 3. Generate Embeddings using cached BGE model
     print(f"Computing embeddings with '{settings.EMBEDDING_MODEL}'...")
-    embed_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+    embed_model = get_embed_model()
     texts = [c.content for c in chunks]
     embeddings = list(embed_model.embed(texts))
     vector_dim = len(embeddings[0])

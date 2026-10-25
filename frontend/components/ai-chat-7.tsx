@@ -493,11 +493,12 @@ export function AIChat7() {
     if (!file) return;
 
     setUploading(true);
-    setUploadStatus("Uploading & indexing document into Qdrant...");
+    setUploadStatus(`Uploading "${file.name}" & computing vector embeddings...`);
 
     const formData = new FormData();
     formData.append("file", file);
 
+    const tStart = performance.now();
     try {
       const res = await fetch(`${API_URL}/ingest`, {
         method: 'POST',
@@ -507,26 +508,30 @@ export function AIChat7() {
 
       if (res.ok) {
         const data = await res.json();
-        setUploadStatus(`Indexed ${data.processed_files} file(s), ${data.chunks_indexed} chunk(s)!`);
-        setShowUploadModal(false);
-        // Refresh document list
+        const elapsedSec = ((performance.now() - tStart) / 1000).toFixed(1);
+        setUploadStatus(`✓ Indexed ${data.chunks_indexed} chunk(s) in ${elapsedSec}s!`);
+        setTimeout(() => setShowUploadModal(false), 1200);
+
+        // Refresh document catalog
         const docRes = await fetch(`${API_URL}/documents`, { headers: { 'x-api-key': API_KEY } });
         if (docRes.ok) {
           const docData = await docRes.json();
-          const formatted: DocumentItem[] = docData.documents.map((d: any, idx: number) => ({
-            id: idx + 1,
-            name: d.name,
-            title: d.name,
-            subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
-            type: d.type,
-            chunks: d.chunks,
-            pages: d.pages
-          }));
-          setDocuments(formatted);
-          setPinnedSources(prev => [...prev, file.name]);
+          if (docData.documents && docData.documents.length > 0) {
+            const formatted: DocumentItem[] = docData.documents.map((d: any, idx: number) => ({
+              id: idx + 1,
+              name: d.name,
+              title: d.name,
+              subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
+              type: d.type,
+              chunks: d.chunks,
+              pages: d.pages
+            }));
+            setDocuments(formatted);
+          }
+          setPinnedSources(prev => prev.includes(file.name) ? prev : [...prev, file.name]);
         }
       } else {
-        setUploadStatus("Upload failed. Verify server status.");
+        setUploadStatus("Upload failed. Server returned error.");
       }
     } catch (err) {
       setUploadStatus("Upload failed due to connection error.");
@@ -1106,10 +1111,22 @@ export function AIChat7() {
                 Upload a research paper or documentation file (.pdf, .md, .html, .txt). The offline pipeline will sanitize, chunk, compute BGE vector embeddings, and pin it to your active session.
               </p>
 
-              <label className="border-2 border-dashed border-[#2b2b36] hover:border-emerald-500/60 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors bg-[#0f0f13]">
-                <Upload className="w-6 h-6 text-slate-400" />
-                <span className="text-xs text-slate-300 font-medium">Select file to ingest</span>
-                <span className="text-[10px] text-slate-500">PDF, Markdown, HTML, TXT</span>
+              <label className={cn(
+                "border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-colors bg-[#0f0f13]",
+                uploading ? "border-emerald-500/50 cursor-wait" : "border-[#2b2b36] hover:border-emerald-500/60 cursor-pointer"
+              )}>
+                {uploading ? (
+                  <div className="py-2 flex flex-col items-center gap-2">
+                    <LatticeLoader status="working" label="Indexing" pattern="orbit" cellSize={7} />
+                    <span className="text-xs text-emerald-400 font-mono mt-1">Extracting & embedding chunks...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-6 h-6 text-slate-400" />
+                    <span className="text-xs text-slate-300 font-medium">Select file to ingest</span>
+                    <span className="text-[10px] text-slate-500">PDF, Markdown, HTML, TXT</span>
+                  </>
+                )}
                 <input
                   type="file"
                   className="hidden"

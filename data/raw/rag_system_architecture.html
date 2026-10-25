@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Production RAG Architecture and Engineering Guide</title>
+</head>
+<body>
+    <header>
+        <nav><a href="#">Navigation Boilerplate to ignore</a></nav>
+    </header>
+    <main>
+        <h1>Engineering Principles for Production-Grade Retrieval-Augmented Generation</h1>
+        <section id="retrieval-layer">
+            <h2>Hybrid Retrieval and Reciprocal Rank Fusion</h2>
+            <p>
+                Dense vector retrieval excels at capturing semantic concepts, but often fails on exact keyword matching, part numbers, abbreviations, and mathematical identifiers.
+                To overcome this limitation, production architectures deploy a hybrid retrieval strategy combining dense cosine vector search with sparse BM25 keyword matching.
+                The ranking scores from both retrieval pipelines are merged using Reciprocal Rank Fusion (RRF):
+                RRF(d) = sum(1 / (k + rank(d))) with constant k typically set to 60.
+            </p>
+        </section>
+        <section id="reranking-layer">
+            <h2>Cross-Encoder Reranking</h2>
+            <p>
+                Bi-encoder embedding models independently embed the query and document, missing fine-grained token-level cross-interactions.
+                A cross-encoder reranker (such as BGE-Reranker-Base) processes the query and candidate chunk jointly through full cross-attention layers.
+                Production systems retrieve the top 30-50 candidates via hybrid search and rescore them down to the top 5 chunks before prompt injection.
+            </p>
+        </section>
+        <section id="guardrails">
+            <h2>Grounding and Hallucination Prevention</h2>
+            <p>
+                To eliminate hallucinations, the system strictly enforces context grounding prompts. If the retrieved context lacks sufficient evidence,
+                the model is required to return: "I don't know based on the provided documents."
+                Furthermore, all factual statements must include direct bracket citations specifying source document and page number.
+            </p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Production RAG Systems Inc. All rights reserved.</p>
+    </footer>
+</body>
+</html>

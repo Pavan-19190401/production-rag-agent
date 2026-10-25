@@ -1,0 +1,35 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables & secrets
+.env
+.env.local
+
+# Database & local storage
+qdrant_data/
+*.sqlite3
+*.db
+bm25_index.pkl
+ingest_manifest.json
+
+# Node & Frontend
+node_modules/
+.next/
+dist/
+out/
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db

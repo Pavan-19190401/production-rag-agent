@@ -33,6 +33,7 @@ from app.generation.guardrails import enforce_faithfulness_guardrail
 from app.cache import cache
 from app.budget import budget_manager, BudgetExceededError
 from app.observability import logger, telemetry
+from app.tracer import tracer
 from ingest.ingest import run_ingestion, get_qdrant_client
 
 # Initialize rate limiter
@@ -150,9 +151,15 @@ async def query_endpoint(
 
         return StreamingResponse(cached_stream(), media_type="text/event-stream")
 
-    # 3. Retrieve Chunks
+    # 3. Initialize Distributed Trace
+    trace = tracer.create_trace(request_id, req.question, mode=req.mode)
+
+    # 4. Retrieve Chunks
+    retrieval_start = time.perf_counter()
     retriever = get_default_retriever(mode=req.mode)
     chunks = retriever.retrieve(req.question, top_k=req.top_k)
+    retrieval_ms = (time.perf_counter() - retrieval_start) * 1000
+    tracer.record_span_retrieval(trace, req.question, chunks, retrieval_ms)
 
     citations = [
         Citation(
@@ -168,25 +175,45 @@ async def query_endpoint(
     llm = LLMClient()
     context_str = " ".join([c.text for c in chunks])
 
-    # 4. SSE Stream Generator
+    # 5. SSE Stream Generator
     async def sse_event_stream() -> AsyncIterator[str]:
         # Step A: Stream sources event immediately upon retrieval
         yield f"event: sources\ndata: {json.dumps(citations, ensure_ascii=False)}\n\n"
 
+        gen_start = time.perf_counter()
         accumulated_answer = ""
         # Step B: Stream LLM tokens asynchronously
         async for token in llm.astream(req.question, chunks):
             accumulated_answer += token
             yield f"data: {json.dumps({'token': token}, ensure_ascii=False)}\n\n"
 
+        gen_ms = (time.perf_counter() - gen_start) * 1000
+
         # Step C: Post-Generation Faithfulness Guardrail Check
         final_answer, faith_score, is_refusal = enforce_faithfulness_guardrail(
             accumulated_answer, context_str
         )
 
+        prompt_tokens = len(context_str) // 4
+        comp_tokens = len(final_answer) // 4
+        cost_usd = (prompt_tokens * 0.00000015) + (comp_tokens * 0.00000060)
+
+        # Record LLM Span and Finalize Trace
+        tracer.record_span_llm(
+            trace,
+            prompt=context_str[:500],
+            answer=final_answer,
+            model=settings.LLM_MODEL,
+            duration_ms=gen_ms,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=comp_tokens,
+            cost_usd=cost_usd
+        )
+
         latency_ms = (time.perf_counter() - t_start) * 1000
+        tracer.finalize_trace(trace, final_answer, faith_score, is_refusal, latency_ms)
         telemetry.record_query(latency_ms, cached=False, is_refusal=is_refusal)
-        budget_manager.record_usage(prompt_tokens=len(context_str) // 4, completion_tokens=len(final_answer) // 4)
+        budget_manager.record_usage(prompt_tokens=prompt_tokens, completion_tokens=comp_tokens, cost_usd=cost_usd)
 
         # Cache result for future requests
         cache.set(
@@ -247,6 +274,7 @@ async def feedback_endpoint(
 ):
     """Records thumbs-up (+1) or thumbs-down (-1) rating tied to a request_id."""
     telemetry.record_feedback(req.rating)
+    tracer.record_feedback(req.request_id, req.rating, req.comment)
     logger.info(
         f"User feedback for request_id={req.request_id}: rating={req.rating} comment={req.comment or ''}",
         extra={"extra_data": {"request_id": req.request_id, "rating": req.rating, "comment": req.comment}}

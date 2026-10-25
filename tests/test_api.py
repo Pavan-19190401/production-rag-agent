@@ -117,6 +117,35 @@ def test_feedback_endpoint():
     assert data["status"] == "success"
 
 
+def test_tracing_and_feedback_connection():
+    from app.tracer import tracer
+
+    # Execute a query
+    req_id = "trace-test-uuid-999"
+    res = client.post(
+        "/query",
+        json={"question": "What is FlashAttention?", "top_k": 2},
+        headers={"x-api-key": VALID_API_KEY, "x-request-id": req_id}
+    )
+    assert res.status_code == 200
+
+    # Submit feedback tied to that request ID
+    fb_res = client.post(
+        "/feedback",
+        json={"request_id": req_id, "rating": 1, "comment": "Verified accurate"},
+        headers={"x-api-key": VALID_API_KEY}
+    )
+    assert fb_res.status_code == 200
+
+    # Verify trace is recorded
+    traces = tracer.load_recent_traces(limit=10)
+    matched = [t for t in traces if t.get("trace_id") == req_id]
+    assert len(matched) == 1
+    assert matched[0]["feedback"]["rating"] == 1
+    assert matched[0]["feedback"]["comment"] == "Verified accurate"
+    assert "retrieval" in matched[0]["spans"]
+
+
 def test_budget_cap_throttling():
     # Temporarily set budget to 0 to simulate limit breach
     original_budget = budget_manager.daily_budget_usd

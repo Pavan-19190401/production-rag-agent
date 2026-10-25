@@ -11,7 +11,10 @@ import {
   RefreshCw,
   ShieldAlert,
   ThumbsUp,
-  Zap
+  Zap,
+  TrendingUp,
+  Activity,
+  Cpu
 } from 'lucide-react';
 
 interface MetricsData {
@@ -104,7 +107,7 @@ export default function MetricsPage() {
       setMetrics(data);
       setError(null);
     } catch (err: any) {
-      setError(err.message || "Failed to load metrics");
+      setError(err.message || "Failed to load telemetry");
     } finally {
       setLoading(false);
     }
@@ -112,97 +115,116 @@ export default function MetricsPage() {
 
   useEffect(() => {
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 10000); // 10s auto refresh
+    const interval = setInterval(fetchMetrics, 10000); // 10s auto-refresh
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 text-[#f4f4f5]">
+      {/* Page Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#1e1e24]">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-emerald-600" />
-            Evaluation Benchmark & Production Telemetry
+          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-emerald-400" />
+            Evaluation Benchmark & Live Telemetry
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time quality scores, ablation results, latency percentiles, and spending caps.
+          <p className="text-xs text-slate-400 mt-1">
+            Empirical quality benchmarks across 65 golden test cases, latency percentiles, and runtime telemetry.
           </p>
         </div>
+
         <button
           onClick={fetchMetrics}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-700 shadow-2xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#141418] hover:bg-[#1e1e24] border border-[#27272e] rounded-xl text-slate-300 hover:text-white transition-colors shadow-2xs"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-400' : 'text-slate-400'}`} />
+          <span>Refresh Live Stats</span>
         </button>
       </div>
 
-      {/* Live System Telemetry Cards */}
+      {/* Live System Telemetry Stat Cards */}
       {metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-              <span>Total Queries</span>
-              <Zap className="w-4 h-4 text-emerald-600" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          {/* Card 1: Total Queries */}
+          <div className="bg-[#121215] border border-[#1f1f25] p-4 rounded-2xl shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span className="font-medium">Total Inferences</span>
+              <Zap className="w-4 h-4 text-emerald-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">{metrics.telemetry.total_queries}</p>
-            <p className="text-2xs text-slate-400 mt-0.5">Uptime: {Math.round(metrics.telemetry.uptime_seconds)}s</p>
+            <p className="text-2xl font-bold font-mono text-white tracking-tight">
+              {metrics.telemetry.total_queries}
+            </p>
+            <p className="text-[11px] font-mono text-slate-500">
+              Uptime: {Math.round(metrics.telemetry.uptime_seconds)}s
+            </p>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-              <span>Cache Hit Ratio</span>
-              <Database className="w-4 h-4 text-blue-600" />
+          {/* Card 2: Cache Hit Ratio */}
+          <div className="bg-[#121215] border border-[#1f1f25] p-4 rounded-2xl shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span className="font-medium">Cache Hit Ratio</span>
+              <Database className="w-4 h-4 text-cyan-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">
+            <p className="text-2xl font-bold font-mono text-white tracking-tight">
               {(metrics.telemetry.cache_hit_ratio * 100).toFixed(1)}%
             </p>
-            <p className="text-2xs text-slate-400 mt-0.5">{metrics.telemetry.cache_hits} served in &lt;2ms</p>
+            <p className="text-[11px] font-mono text-slate-500">
+              {metrics.telemetry.cache_hits} served in &lt;2ms
+            </p>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-              <span>Average Latency</span>
-              <Clock className="w-4 h-4 text-amber-600" />
+          {/* Card 3: Average Latency */}
+          <div className="bg-[#121215] border border-[#1f1f25] p-4 rounded-2xl shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span className="font-medium">Average Latency</span>
+              <Clock className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">
+            <p className="text-2xl font-bold font-mono text-white tracking-tight">
               {metrics.telemetry.average_latency_ms.toFixed(1)} ms
             </p>
-            <p className="text-2xs text-slate-400 mt-0.5">Retrieval + LLM generation</p>
+            <p className="text-[11px] font-mono text-slate-500">
+              End-to-end SSE streaming
+            </p>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-              <span>Daily Spend</span>
-              <DollarSign className="w-4 h-4 text-purple-600" />
+          {/* Card 4: Daily Spend */}
+          <div className="bg-[#121215] border border-[#1f1f25] p-4 rounded-2xl shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span className="font-medium">Daily Spend</span>
+              <DollarSign className="w-4 h-4 text-purple-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">
+            <p className="text-2xl font-bold font-mono text-white tracking-tight">
               ${metrics.budget.daily_spend_usd.toFixed(4)}
             </p>
-            <p className="text-2xs text-slate-400 mt-0.5">Cap: ${metrics.budget.daily_budget_usd.toFixed(2)}</p>
+            <p className="text-[11px] font-mono text-slate-500">
+              Cap: ${metrics.budget.daily_budget_usd.toFixed(2)} USD
+            </p>
           </div>
         </div>
       )}
 
       {/* Ablation Benchmark Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-[#121215] border border-[#1f1f25] rounded-2xl overflow-hidden shadow-xs">
+        <div className="px-5 py-3.5 border-b border-[#1f1f25] flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="font-semibold text-slate-900 text-sm">Empirical Ablation Benchmark (Golden Dataset)</h3>
-            <p className="text-xs text-slate-500">65 Curated Gold Records (55 Answerable, 10 Unanswerable Refusal Tests)</p>
+            <h3 className="font-semibold text-sm text-slate-200">
+              Empirical Ablation Benchmark (Golden Dataset)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Measured over 65 gold-standard records (55 answerable queries, 10 unanswerable refusal tests).
+            </p>
           </div>
-          <span className="text-xs bg-emerald-100 text-emerald-800 font-medium px-2.5 py-1 rounded-md">
-            Production Default: Hybrid RRF
+          <span className="text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2.5 py-1 rounded-lg">
+            Production Winner: Hybrid (BM25 + Dense RRF)
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+            <thead className="bg-[#16161a] border-b border-[#222228] text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="px-5 py-3">Configuration</th>
-                <th className="px-4 py-3">Recall@5 (Hit Rate)</th>
+                <th className="px-4 py-3">Recall@5</th>
                 <th className="px-4 py-3">MRR</th>
                 <th className="px-4 py-3">nDCG@5</th>
                 <th className="px-4 py-3">Faithfulness</th>
@@ -211,29 +233,31 @@ export default function MetricsPage() {
                 <th className="px-4 py-3">p95 Latency</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-[#1e1e24]">
               {ABLATION_DATA.map((row, i) => (
                 <tr
                   key={i}
-                  className={`hover:bg-slate-50/80 transition-colors ${
-                    row.isDefault ? 'bg-emerald-50/50 font-medium' : ''
+                  className={`transition-colors ${
+                    row.isDefault
+                      ? 'bg-emerald-950/20 border-l-2 border-emerald-500 text-slate-200 font-medium'
+                      : 'hover:bg-[#18181d] text-slate-300'
                   }`}
                 >
                   <td className="px-5 py-3.5 flex items-center gap-2">
-                    <span>{row.name}</span>
+                    <span className="text-slate-200">{row.name}</span>
                     {row.isDefault && (
-                      <span className="text-2xs bg-emerald-600 text-white px-1.5 py-0.5 rounded font-semibold uppercase">
+                      <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                         Default
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3.5 font-bold text-slate-900">{row.recall5}</td>
-                  <td className="px-4 py-3.5">{row.mrr}</td>
-                  <td className="px-4 py-3.5">{row.ndcg5}</td>
-                  <td className="px-4 py-3.5 text-emerald-700 font-semibold">{row.faithfulness}</td>
-                  <td className="px-4 py-3.5 text-slate-500">{row.hallucination}</td>
-                  <td className="px-4 py-3.5">{row.p50}</td>
-                  <td className="px-4 py-3.5">{row.p95}</td>
+                  <td className="px-4 py-3.5 font-bold font-mono text-white">{row.recall5}</td>
+                  <td className="px-4 py-3.5 font-mono text-slate-300">{row.mrr}</td>
+                  <td className="px-4 py-3.5 font-mono text-slate-300">{row.ndcg5}</td>
+                  <td className="px-4 py-3.5 font-mono text-emerald-400 font-bold">{row.faithfulness}</td>
+                  <td className="px-4 py-3.5 font-mono text-rose-400/80">{row.hallucination}</td>
+                  <td className="px-4 py-3.5 font-mono text-slate-300">{row.p50}</td>
+                  <td className="px-4 py-3.5 font-mono text-slate-400">{row.p95}</td>
                 </tr>
               ))}
             </tbody>
@@ -241,28 +265,54 @@ export default function MetricsPage() {
         </div>
       </div>
 
-      {/* Engineering Insights Card */}
+      {/* Engineering Insights Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <h4 className="font-semibold text-slate-900 text-sm mb-2 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            Why Hybrid (BM25 + Dense RRF) Won
+        {/* Insight 1 */}
+        <div className="bg-[#121215] border border-[#1f1f25] p-5 rounded-2xl shadow-xs space-y-2">
+          <h4 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            Why Hybrid (BM25 + Dense RRF) Outperformed Dense Only
           </h4>
-          <p className="text-slate-600 leading-relaxed">
-            In dense technical and scientific papers (e.g., Attention, LoRA, FlashAttention), pure dense vector search struggles with exact formulas (such as <code>W_0 + B * A</code>), constant identifiers (<code>d_model=512</code>), and acronyms. Adding BM25 inverted indexing and Reciprocal Rank Fusion ($k=60$) yielded a massive <strong>+25.4% boost in Recall@5</strong> and an <strong>84% improvement in MRR</strong> while keeping median latency under 10ms.
+          <p className="text-slate-400 leading-relaxed">
+            In dense technical and AI research papers (Attention, LoRA, FlashAttention), pure dense vector search struggles with exact formula syntax (such as <code className="bg-[#1a1a20] border border-[#27272e] text-emerald-300 px-1 py-0.5 rounded font-mono">W_0 + B * A</code>), constant identifiers (<code className="bg-[#1a1a20] border border-[#27272e] text-emerald-300 px-1 py-0.5 rounded font-mono">d_model=512</code>), and exact acronyms. Adding BM25 inverted indexing fused via Reciprocal Rank Fusion ($k=60$) produced a massive <strong className="text-slate-200">+25.4% gain in Recall@5</strong> and an <strong className="text-slate-200">84% improvement in MRR</strong> while keeping median latency under 10ms.
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <h4 className="font-semibold text-slate-900 text-sm mb-2 flex items-center gap-1.5">
-            <ShieldAlert className="w-4 h-4 text-amber-600" />
-            Strict Grounding & Hallucination Guardrails
+        {/* Insight 2 */}
+        <div className="bg-[#121215] border border-[#1f1f25] p-5 rounded-2xl shadow-xs space-y-2">
+          <h4 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-400" />
+            Strict Grounding & Hallucination Defense Guardrail
           </h4>
-          <p className="text-slate-600 leading-relaxed">
-            The system achieves <strong>90.0% Faithfulness</strong> by enforcing grounding prompt directives, requiring bracketed page citations <code>[source, p. X]</code>, and performing post-generation claim verification. When an out-of-domain or unanswerable query is submitted, it deterministically refuses with <em>"I don't know based on the provided documents"</em>.
+          <p className="text-slate-400 leading-relaxed">
+            The system achieves <strong className="text-emerald-400">90.0% Faithfulness</strong> by enforcing strict grounding prompt directives, requiring verified bracketed citations <code className="bg-[#1a1a20] border border-[#27272e] text-amber-300 px-1 py-0.5 rounded font-mono">[source, p. X]</code>, and running post-generation claim verification. When an out-of-domain or unanswerable query is received, it deterministically refuses with <em className="text-slate-300">"I don't know based on the provided documents."</em>
           </p>
         </div>
       </div>
+
+      {/* Production Configuration Summary Footer */}
+      {metrics && (
+        <div className="bg-[#121215] border border-[#1f1f25] p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-slate-500" />
+              Embeddings: <strong className="text-slate-300 font-mono">{metrics.settings.embedding_model}</strong>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
+              Reranker: <strong className="text-slate-300 font-mono">{metrics.settings.reranker_model}</strong>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-slate-500" />
+              Rate Limit: <strong className="text-slate-300 font-mono">{metrics.settings.rate_limit_per_minute}/min</strong>
+            </span>
+          </div>
+
+          <span className="text-[11px] text-slate-500 font-mono">
+            Qdrant Vector Database • FastEmbed ONNX • FastAPI
+          </span>
+        </div>
+      )}
     </div>
   );
 }

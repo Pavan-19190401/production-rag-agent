@@ -76,10 +76,10 @@ const DEFAULT_DOCUMENTS: DocumentItem[] = [
   { id: 5, name: 'rag_system_architecture.html', title: 'rag_system_architecture.html', subtitle: 'Doc Production Arch', type: 'html', chunks: 1, pages: 1 }
 ];
 
-const EXAMPLE_QUESTIONS = [
+const SUGGESTED_PROMPTS = [
   "What is FlashAttention and how does tiling help?",
-  "Which segment or attention head dimensions held up in the Transformer base model?",
   "Calculate the ratio of parameters in LoRA vs GPT-3",
+  "What are the dimensions of d_model and heads in Transformer?",
   "What is the mathematical formulation of LoRA weight adaptation?",
   "What is the return and refund policy for annual enterprise subscription plans?"
 ];
@@ -89,23 +89,23 @@ export function AIChat7() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "The quickest lever is re-engaging the two downgraded research architectures. [2] FlashAttention computes exact softmax without storing the full N × N matrix in HBM by using tiling. [2] Meanwhile, LoRA freezes pre-trained model weights and injects trainable rank decomposition matrices. [3]",
+      content: "Welcome! I am your research assistant grounded on the arXiv research papers and architecture specifications pinned on the left. [1] All answers include verified in-line citations mapped to your pinned sources. [2]\n\nAsk a question or select a prompt below to get started.",
       status: 'done',
-      elapsedSeconds: 0.9,
+      elapsedSeconds: 0.3,
       citations: [
+        {
+          source: 'attention_paper.pdf',
+          page: 1,
+          chunk_id: 'attention_paper.pdf_p1_Abstract_c0',
+          score: 0.033,
+          snippet: 'Attention Is All You Need: The dominant sequence transduction models are based on complex recurrent or convolutional neural networks.'
+        },
         {
           source: 'flash_attention.md',
           page: 1,
-          chunk_id: 'flash_attention.md_p1_Tiling_Algorithm_c0',
-          score: 0.0328,
-          snippet: '## Tiling Algorithm\nFlashAttention computes exact softmax without storing the full N x N matrix in HBM by using tiling.'
-        },
-        {
-          source: 'lora_paper.pdf',
-          page: 1,
-          chunk_id: 'lora_paper.pdf_p1_Abstract_c0',
-          score: 0.0315,
-          snippet: 'We propose Low-Rank Adaptation (LoRA), which freezes the pre-trained model weights and injects trainable rank decomposition matrices.'
+          chunk_id: 'flash_attention.md_p1_Abstract_c0',
+          score: 0.032,
+          snippet: 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness using tiling between SRAM and HBM.'
         }
       ]
     }
@@ -117,6 +117,7 @@ export function AIChat7() {
   const [pinnedSources, setPinnedSources] = useState<string[]>(DEFAULT_DOCUMENTS.map(d => d.name));
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -125,7 +126,7 @@ export function AIChat7() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'rag-prod-secret-key-change-me';
 
-  // Load available documents from backend
+  // Load available documents dynamically from the backend
   useEffect(() => {
     async function fetchDocuments() {
       try {
@@ -149,7 +150,7 @@ export function AIChat7() {
           }
         }
       } catch (e) {
-        // Fallback to defaults
+        // Fallback to default catalog
       }
     }
     fetchDocuments();
@@ -159,7 +160,8 @@ export function AIChat7() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const togglePin = (sourceName: string) => {
+  const togglePin = (sourceName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setPinnedSources(prev =>
       prev.includes(sourceName) ? prev.filter(s => s !== sourceName) : [...prev, sourceName]
     );
@@ -168,10 +170,21 @@ export function AIChat7() {
   const pinAll = () => setPinnedSources(documents.map(d => d.name));
   const clearPins = () => setPinnedSources([]);
 
-  // Source number mapping for citation pills
+  // Source number mapping for citation badges
   const getSourceNumber = (sourceName: string): number => {
     const doc = documents.find(d => d.name.toLowerCase() === sourceName.toLowerCase());
     return doc ? doc.id : 1;
+  };
+
+  // Inspect source details when clicked in sidebar
+  const handleInspectSource = (doc: DocumentItem) => {
+    setSelectedCitation({
+      source: doc.name,
+      page: 1,
+      chunk_id: `${doc.name}_catalog_entry`,
+      score: 1.0,
+      snippet: `Indexed Document: ${doc.title}\nFormat: ${doc.subtitle}\nTotal Chunks: ${doc.chunks} indexed vectors in Qdrant.\nPages: ${doc.pages}\nStatus: ${pinnedSources.includes(doc.name) ? 'Pinned (Active retrieval context)' : 'Unpinned (Excluded from context)'}`
+    });
   };
 
   const handleSend = async (questionText?: string) => {
@@ -360,6 +373,12 @@ export function AIChat7() {
     }
   };
 
+  const copyMessageContent = (msgId: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessageId(msgId);
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -414,17 +433,16 @@ export function AIChat7() {
     setTimeout(() => setCopiedSnippet(false), 2000);
   };
 
-  // Render text with clickable numbered citation pills like in the image
+  // Convert raw citations ([source.pdf, page X] or [1]) into clean numbered pills
   const renderFormattedText = (text: string, citations?: Citation[]) => {
     if (!text) return null;
 
-    // Pattern matching [filename, page X] or [1], [2], etc.
     const parts = text.split(/(\[[^\]]+\])/g);
     return parts.map((part, index) => {
       if (part.startsWith('[') && part.endsWith(']')) {
         const inner = part.slice(1, -1).trim();
 
-        // Check if numeric like [1] or [2]
+        // 1. Direct numeric format like [1], [2]
         if (/^\d+$/.test(inner)) {
           const docId = parseInt(inner, 10);
           const matchedDoc = documents.find(d => d.id === docId);
@@ -443,12 +461,12 @@ export function AIChat7() {
                     source: matchedDoc.name,
                     page: 1,
                     chunk_id: `${matchedDoc.name}_p1_c0`,
-                    score: 0.032,
-                    snippet: `Pinned source reference: ${matchedDoc.title} (${matchedDoc.subtitle})`
+                    score: 0.033,
+                    snippet: `Pinned source: ${matchedDoc.title} (${matchedDoc.subtitle})`
                   });
                 }
               }}
-              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383840] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
+              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383842] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
               title={`View Source #${docId}: ${matchedDoc?.name || ''}`}
             >
               {docId}
@@ -456,7 +474,7 @@ export function AIChat7() {
           );
         }
 
-        // Check if [source.pdf, page X]
+        // 2. Full citation format like [source.pdf, page X]
         const matchedCitation = citations?.find(c => inner.toLowerCase().includes(c.source.toLowerCase()));
         if (matchedCitation) {
           const docNum = getSourceNumber(matchedCitation.source);
@@ -464,7 +482,7 @@ export function AIChat7() {
             <button
               key={index}
               onClick={() => setSelectedCitation(matchedCitation)}
-              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383840] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
+              className="inline-flex items-center justify-center w-5 h-5 mx-1 text-[11px] font-mono font-semibold rounded bg-[#2b2b30] hover:bg-[#383842] text-slate-200 border border-[#3f3f46] transition-colors cursor-pointer align-baseline"
               title={`View Citation: ${matchedCitation.source} (p. ${matchedCitation.page})`}
             >
               {docNum}
@@ -481,7 +499,7 @@ export function AIChat7() {
   return (
     <div className="flex h-[calc(100vh-5.5rem)] w-full bg-[#0c0c0e] text-[#f4f4f5] antialiased select-none font-sans overflow-hidden">
       {/* ------------------------------------------------------------- */}
-      {/* LEFT SIDEBAR: Pinned Sources (Exact layout & dark styling)   */}
+      {/* LEFT SIDEBAR: Pinned Sources                                  */}
       {/* ------------------------------------------------------------- */}
       <aside className="w-72 lg:w-80 flex-shrink-0 flex flex-col p-4 border-r border-[#1e1e24] bg-[#0c0c0e]">
         {/* Sidebar Header */}
@@ -504,7 +522,7 @@ export function AIChat7() {
             return (
               <div
                 key={doc.id}
-                onClick={() => togglePin(doc.name)}
+                onClick={() => handleInspectSource(doc)}
                 className={cn(
                   "group flex items-start gap-3 p-2.5 rounded-xl border transition-all cursor-pointer",
                   isPinned
@@ -517,7 +535,7 @@ export function AIChat7() {
                   {doc.id}
                 </div>
 
-                {/* Document Information */}
+                {/* Document Title & Subtitle */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-slate-200 truncate leading-tight group-hover:text-white">
                     {doc.title}
@@ -527,14 +545,19 @@ export function AIChat7() {
                   </p>
                 </div>
 
-                {/* Pin Status Icon */}
-                <div className="flex-shrink-0 pt-0.5">
+                {/* Pin Toggle Button */}
+                <button
+                  type="button"
+                  onClick={(e) => togglePin(doc.name, e)}
+                  className="flex-shrink-0 pt-0.5 p-1 text-slate-400 hover:text-white"
+                  title={isPinned ? "Unpin Source" : "Pin Source"}
+                >
                   {isPinned ? (
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shadow-[0_0_8px_#10b981]" />
                   ) : (
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block" />
                   )}
-                </div>
+                </button>
               </div>
             );
           })}
@@ -547,7 +570,7 @@ export function AIChat7() {
             className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium rounded-xl border border-[#27272e] bg-[#141418] hover:bg-[#1a1a20] text-slate-300 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Upload Document to Catalog</span>
+            <span>Add / Upload Document</span>
           </button>
         </div>
       </aside>
@@ -581,16 +604,16 @@ export function AIChat7() {
             </div>
           </div>
 
-          {/* Right Cited Badge */}
+          {/* Right Cited Badge & Reset */}
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400 font-medium">
               <strong className="text-slate-200 font-mono">{totalCitationsCount}</strong> sources Cited
             </span>
 
             <button
-              onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: "Chat history cleared. How can I assist you with your pinned sources?" }])}
+              onClick={() => setMessages([])}
               className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-[#1c1c21] transition-colors"
-              title="Reset Chat"
+              title="Clear Thread"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
@@ -599,144 +622,157 @@ export function AIChat7() {
 
         {/* Message Stream */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-800">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "flex flex-col",
-                msg.role === 'user' ? "items-end" : "items-start"
-              )}
-            >
-              {msg.role === 'user' ? (
-                /* User Prompt Bubble (Sleek dark bubble right aligned) */
-                <div className="max-w-xl bg-[#1d1d22] text-[#f4f4f5] px-4 py-2.5 rounded-2xl rounded-br-xs text-sm border border-[#2a2a32] shadow-xs">
-                  {msg.content}
-                </div>
-              ) : (
-                /* Assistant Response (Left aligned text with numbered pills) */
-                <div className="max-w-3xl space-y-2">
-                  {/* LatticeLoader Component from React Bits */}
-                  {msg.status === 'working' ? (
-                    <div className="py-1">
-                      <LatticeLoader
-                        status="working"
-                        label="Thinking"
-                        pattern="orbit"
-                        grid={3}
-                        shape="round"
-                        doneColor="#22c55e"
-                        errorColor="#ef4444"
-                        cellSize={6}
-                        gap={2}
-                        fontSize={13}
-                        step={90}
-                        color="#a1a1aa"
-                        showTimer={true}
-                      />
-                    </div>
-                  ) : msg.elapsedSeconds != null ? (
-                    <div className="py-0.5">
-                      <LatticeLoader
-                        status={msg.status === 'error' ? 'error' : 'done'}
-                        label="Thinking"
-                        doneLabel="Done in"
-                        errorLabel="Failed after"
-                        pattern="orbit"
-                        grid={3}
-                        shape="round"
-                        doneColor="#22c55e"
-                        errorColor="#ef4444"
-                        cellSize={6}
-                        gap={2}
-                        fontSize={12}
-                        color="#71717a"
-                        elapsed={msg.elapsedSeconds}
-                        showTimer={true}
-                      />
-                    </div>
-                  ) : null}
-
-                  {/* ReAct Agent Reasoning Trace (if applicable) */}
-                  {msg.steps && msg.steps.length > 0 && (
-                    <details className="rounded-xl border border-[#27272e] bg-[#131317] p-3 text-xs text-slate-300">
-                      <summary className="font-semibold text-emerald-400 cursor-pointer flex items-center gap-1.5 select-none hover:text-emerald-300">
-                        <Cpu className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>ReAct Reasoning Trace ({msg.steps.length} step{msg.steps.length > 1 ? 's' : ''})</span>
-                      </summary>
-                      <div className="mt-2.5 space-y-2 pl-2 border-l border-emerald-500/60 text-xs">
-                        {msg.steps.map((st, i) => (
-                          <div key={i} className="space-y-1">
-                            {st.type === 'thought' ? (
-                              <div>
-                                <span className="font-semibold text-indigo-400">Step {st.iteration} Thought:</span> {st.content}
-                                {st.tool && (
-                                  <div className="mt-0.5 text-slate-400 font-mono text-[11px] bg-[#1a1a20] px-2 py-0.5 rounded border border-[#2e2e38] inline-block">
-                                    &rarr; Action: <strong className="text-slate-200">{st.tool}</strong>({st.tool_input || '""'})
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="bg-[#18181d] p-2 rounded-lg border border-[#27272e] font-mono text-[11px] text-slate-400 max-h-32 overflow-y-auto">
-                                <span className="font-semibold text-emerald-400 font-sans block text-xs">Observation ({st.tool}):</span>
-                                {st.content}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-
-                  {/* Answer Text with Numbered Citations */}
-                  <div className="text-sm leading-relaxed text-[#d4d4d8] font-normal whitespace-pre-wrap select-text">
-                    {renderFormattedText(msg.content, msg.citations)}
-                  </div>
-
-                  {/* Citations Preview Strip */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      {msg.citations.map((c, i) => {
-                        const num = getSourceNumber(c.source);
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => setSelectedCitation(c)}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#16161a] hover:bg-[#202026] text-slate-300 border border-[#27272e] transition-colors"
-                          >
-                            <span className="w-4 h-4 rounded bg-[#24242c] text-slate-300 font-mono text-[10px] flex items-center justify-center">
-                              {num}
-                            </span>
-                            <span className="truncate max-w-[140px]">{c.source}</span>
-                            <span className="text-slate-500 font-mono text-[10px]">p.{c.page}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Feedback Buttons */}
-                  {msg.id !== 'welcome' && !msg.isStreaming && (
-                    <div className="flex items-center gap-2 pt-1 text-xs text-slate-500">
-                      <button
-                        onClick={() => handleFeedback(msg.id, 1)}
-                        className={cn("p-1 hover:text-slate-300 transition-colors", msg.feedback === 1 && "text-emerald-400 font-bold")}
-                        title="Thumbs Up"
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleFeedback(msg.id, -1)}
-                        className={cn("p-1 hover:text-slate-300 transition-colors", msg.feedback === -1 && "text-rose-400 font-bold")}
-                        title="Thumbs Down"
-                      >
-                        <ThumbsDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+          {messages.length === 0 ? (
+            /* Clean Empty State */
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80">
+              <div className="w-12 h-12 rounded-2xl bg-[#16161a] border border-[#27272e] flex items-center justify-center text-emerald-400 shadow-sm">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-slate-200">Grounded Research Assistant</h3>
+                <p className="text-xs text-slate-500 max-w-sm mt-1">
+                  Ask any question over your {pinnedSources.length} pinned arXiv papers and architectural docs.
+                </p>
+              </div>
             </div>
-          ))}
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={cn(
+                  "flex flex-col",
+                  msg.role === 'user' ? "items-end" : "items-start"
+                )}
+              >
+                {msg.role === 'user' ? (
+                  /* User Prompt Bubble */
+                  <div className="max-w-xl bg-[#1d1d22] text-[#f4f4f5] px-4 py-2.5 rounded-2xl rounded-br-xs text-sm border border-[#2a2a32] shadow-xs">
+                    {msg.content}
+                  </div>
+                ) : (
+                  /* Assistant Response */
+                  <div className="max-w-3xl space-y-2">
+                    {/* LatticeLoader Component while Thinking / Completed */}
+                    {msg.status === 'working' ? (
+                      <div className="py-1">
+                        <LatticeLoader
+                          status="working"
+                          label="Thinking"
+                          pattern="orbit"
+                          grid={3}
+                          shape="round"
+                          doneColor="#22c55e"
+                          errorColor="#ef4444"
+                          cellSize={6}
+                          gap={2}
+                          fontSize={13}
+                          step={90}
+                          color="#a1a1aa"
+                          showTimer={true}
+                        />
+                      </div>
+                    ) : msg.elapsedSeconds != null ? (
+                      <div className="py-0.5">
+                        <LatticeLoader
+                          status={msg.status === 'error' ? 'error' : 'done'}
+                          label="Thinking"
+                          doneLabel="Done in"
+                          errorLabel="Failed after"
+                          pattern="orbit"
+                          grid={3}
+                          shape="round"
+                          doneColor="#22c55e"
+                          errorColor="#ef4444"
+                          cellSize={6}
+                          gap={2}
+                          fontSize={12}
+                          color="#71717a"
+                          elapsed={msg.elapsedSeconds}
+                          showTimer={true}
+                        />
+                      </div>
+                    ) : null}
+
+                    {/* ReAct Agent Reasoning Trace */}
+                    {msg.steps && msg.steps.length > 0 && (
+                      <details className="rounded-xl border border-[#27272e] bg-[#131317] p-3 text-xs text-slate-300">
+                        <summary className="font-semibold text-emerald-400 cursor-pointer flex items-center gap-1.5 select-none hover:text-emerald-300">
+                          <Cpu className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>ReAct Reasoning Trace ({msg.steps.length} step{msg.steps.length > 1 ? 's' : ''})</span>
+                        </summary>
+                        <div className="mt-2.5 space-y-2 pl-2 border-l border-emerald-500/60 text-xs">
+                          {msg.steps.map((st, i) => (
+                            <div key={i} className="space-y-1">
+                              {st.type === 'thought' ? (
+                                <div>
+                                  <span className="font-semibold text-indigo-400">Step {st.iteration} Thought:</span> {st.content}
+                                  {st.tool && (
+                                    <div className="mt-0.5 text-slate-400 font-mono text-[11px] bg-[#1a1a20] px-2 py-0.5 rounded border border-[#2e2e38] inline-block">
+                                      &rarr; Action: <strong className="text-slate-200">{st.tool}</strong>({st.tool_input || '""'})
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="bg-[#18181d] p-2 rounded-lg border border-[#27272e] font-mono text-[11px] text-slate-400 max-h-32 overflow-y-auto">
+                                  <span className="font-semibold text-emerald-400 font-sans block text-xs">Observation ({st.tool}):</span>
+                                  {st.content}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    {/* Answer Text with Clean Numbered Citation Pills */}
+                    <div className="text-sm leading-relaxed text-[#d4d4d8] font-normal whitespace-pre-wrap select-text">
+                      {renderFormattedText(msg.content, msg.citations)}
+                    </div>
+
+                    {/* Assistant Footer: Feedback & Copy */}
+                    {!msg.isStreaming && msg.content && (
+                      <div className="flex items-center gap-3 pt-1 text-xs text-slate-500">
+                        <button
+                          onClick={() => copyMessageContent(msg.id, msg.content)}
+                          className="flex items-center gap-1 hover:text-slate-300 transition-colors"
+                          title="Copy Answer"
+                        >
+                          {copiedMessageId === msg.id ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span className="text-[11px] text-emerald-400">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span className="text-[11px]">Copy</span>
+                            </>
+                          )}
+                        </button>
+
+                        <span className="text-slate-700">•</span>
+
+                        <button
+                          onClick={() => handleFeedback(msg.id, 1)}
+                          className={cn("p-0.5 hover:text-slate-300 transition-colors", msg.feedback === 1 && "text-emerald-400 font-bold")}
+                          title="Grounded & Helpful"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleFeedback(msg.id, -1)}
+                          className={cn("p-0.5 hover:text-slate-300 transition-colors", msg.feedback === -1 && "text-rose-400 font-bold")}
+                          title="Ungrounded or Inaccurate"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -744,10 +780,10 @@ export function AIChat7() {
         {/* BOTTOM INPUT AREA: Rounded Card matching the image design   */}
         {/* ----------------------------------------------------------- */}
         <div className="p-6 pt-2">
-          {/* Example Prompts Pills */}
+          {/* Suggested Prompts (when thread is empty) */}
           {messages.length <= 1 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {EXAMPLE_QUESTIONS.map((q, idx) => (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {SUGGESTED_PROMPTS.map((q, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(q)}
@@ -767,7 +803,7 @@ export function AIChat7() {
             }}
             className="rounded-2xl border border-[#27272e] bg-[#141418] focus-within:border-[#3f3f4a] p-3 shadow-lg transition-all"
           >
-            {/* Input field */}
+            {/* Input Field */}
             <textarea
               rows={2}
               value={input}
@@ -783,16 +819,22 @@ export function AIChat7() {
               className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-hidden resize-none leading-relaxed"
             />
 
-            {/* Bottom Controls Row: '+' Button on Left, Send Button on Right */}
+            {/* Bottom Controls Row: '+' Button, Pinned Count Badge, Send Button */}
             <div className="flex items-center justify-between pt-1">
-              <button
-                type="button"
-                onClick={() => setShowUploadModal(true)}
-                className="w-7 h-7 rounded-lg bg-[#1f1f26] hover:bg-[#282832] text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors"
-                title="Add Source / Upload Document"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(true)}
+                  className="w-7 h-7 rounded-lg bg-[#1f1f26] hover:bg-[#282832] text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors"
+                  title="Upload New Document"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+
+                <span className="text-[11px] font-mono text-slate-500">
+                  {pinnedSources.length} source(s) pinned
+                </span>
+              </div>
 
               <button
                 type="submit"

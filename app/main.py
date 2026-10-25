@@ -51,20 +51,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-
-@app.on_event("startup")
-async def startup_prewarm():
-    """Pre-warms BGE dense embeddings and Qdrant client to eliminate cold-start latency."""
-    try:
-        import asyncio
-        from ingest.ingest import get_embed_model, get_qdrant_client
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, get_embed_model)
-        await loop.run_in_executor(None, get_qdrant_client)
-        logger.info("Startup pre-warming complete: BGE model and Qdrant client cached in memory.")
-    except Exception as e:
-        logger.warning(f"Startup pre-warming non-fatal warning: {e}")
-
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,

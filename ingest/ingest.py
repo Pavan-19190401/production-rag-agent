@@ -18,21 +18,30 @@ from ingest.chunking import ChunkingEngine, TextChunk
 MANIFEST_PATH = BASE_DIR / "data" / "processed" / "ingest_manifest.json"
 BM25_STORE_PATH = BASE_DIR / "data" / "processed" / "bm25_index.pkl"
 
+_cached_qdrant_client: Optional[QdrantClient] = None
+
 
 def get_qdrant_client() -> QdrantClient:
-    """Instantiates a Qdrant client based on configuration."""
+    """Instantiates and caches a singleton Qdrant client based on configuration."""
+    global _cached_qdrant_client
+    if _cached_qdrant_client is not None:
+        return _cached_qdrant_client
+
     url = settings.QDRANT_URL
     api_key = settings.QDRANT_API_KEY or None
 
     if url.startswith("http://") or url.startswith("https://"):
-        return QdrantClient(url=url, api_key=api_key)
+        client = QdrantClient(url=url, api_key=api_key)
     elif url == ":memory:":
-        return QdrantClient(":memory:")
+        client = QdrantClient(":memory:")
     else:
         # File-system persistent path
         storage_path = Path(url)
         storage_path.mkdir(parents=True, exist_ok=True)
-        return QdrantClient(path=str(storage_path))
+        client = QdrantClient(path=str(storage_path))
+
+    _cached_qdrant_client = client
+    return _cached_qdrant_client
 
 
 def init_qdrant_collection(client: QdrantClient, vector_size: int = 384) -> None:

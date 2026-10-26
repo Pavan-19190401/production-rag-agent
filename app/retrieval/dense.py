@@ -4,7 +4,7 @@ from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 
 from app.config import settings
-from ingest.ingest import get_qdrant_client
+from ingest.ingest import get_qdrant_client, get_embed_model
 
 
 @dataclass
@@ -22,7 +22,7 @@ class DenseRetriever:
 
     def __init__(self, client: Optional[QdrantClient] = None):
         self.client = client or get_qdrant_client()
-        self.embed_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+        self.embed_model = get_embed_model()
 
     def retrieve(self, query: str, top_k: int = 5, score_threshold: float = 0.0) -> List[RetrievedChunk]:
         """Embeds query and returns top-k nearest neighbor chunks."""

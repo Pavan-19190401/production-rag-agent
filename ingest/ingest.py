@@ -26,7 +26,10 @@ def get_embed_model() -> TextEmbedding:
     """Instantiates and caches a singleton TextEmbedding model."""
     global _cached_embed_model
     if _cached_embed_model is None:
-        _cached_embed_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+        _cached_embed_model = TextEmbedding(
+            model_name=settings.EMBEDDING_MODEL,
+            threads=1
+        )
     return _cached_embed_model
 
 
@@ -157,11 +160,11 @@ def run_ingestion(
     if not chunks:
         return {"status": "no_chunks", "processed_files": len(files_to_process), "chunks_indexed": 0}
 
-    # 3. Generate Embeddings using cached BGE model
+    # 3. Generate Embeddings using cached BGE model (low-memory batched inference)
     print(f"Computing embeddings with '{settings.EMBEDDING_MODEL}'...")
     embed_model = get_embed_model()
     texts = [c.content for c in chunks]
-    embeddings = list(embed_model.embed(texts))
+    embeddings = list(embed_model.embed(texts, batch_size=16))
     vector_dim = len(embeddings[0])
 
     # 4. Upsert to Qdrant

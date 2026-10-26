@@ -492,6 +492,14 @@ export function AIChat7() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input so re-selecting the same file works
+    e.target.value = '';
+
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadStatus("File exceeds maximum allowed size (25MB).");
+      return;
+    }
+
     setUploading(true);
     setUploadStatus(`Uploading "${file.name}" & computing vector embeddings...`);
 
@@ -510,34 +518,46 @@ export function AIChat7() {
         const data = await res.json();
         const elapsedSec = ((performance.now() - tStart) / 1000).toFixed(1);
         setUploadStatus(`✓ Indexed ${data.chunks_indexed} chunk(s) in ${elapsedSec}s!`);
-        setTimeout(() => setShowUploadModal(false), 1200);
+        setTimeout(() => setShowUploadModal(false), 1400);
 
-        // Refresh document catalog
-        const docRes = await fetch(`${API_URL}/documents`, { headers: { 'x-api-key': API_KEY } });
-        if (docRes.ok) {
-          const docData = await docRes.json();
-          if (docData.documents && docData.documents.length > 0) {
-            const formatted: DocumentItem[] = docData.documents.map((d: any, idx: number) => ({
-              id: idx + 1,
-              name: d.name,
-              title: d.name,
-              subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
-              type: d.type,
-              chunks: d.chunks,
-              pages: d.pages
-            }));
-            setDocuments(formatted);
+        // Refresh document catalog safely
+        try {
+          const docRes = await fetch(`${API_URL}/documents`, { headers: { 'x-api-key': API_KEY } });
+          if (docRes.ok) {
+            const docData = await docRes.json();
+            if (docData.documents && docData.documents.length > 0) {
+              const formatted: DocumentItem[] = docData.documents.map((d: any, idx: number) => ({
+                id: idx + 1,
+                name: d.name,
+                title: d.title || d.name,
+                subtitle: d.type === 'pdf' ? `PDF ${d.pages} pages` : d.type === 'md' ? 'Note 1,400 words' : `${d.type.toUpperCase()} Doc`,
+                type: d.type,
+                chunks: d.chunks,
+                pages: d.pages
+              }));
+              setDocuments(formatted);
+            }
           }
-          setPinnedSources(prev => prev.includes(file.name) ? prev : [...prev, file.name]);
+        } catch (catErr) {
+          console.warn("Catalog refresh postponed:", catErr);
         }
+        setPinnedSources(prev => prev.includes(file.name) ? prev : [...prev, file.name]);
       } else {
-        setUploadStatus("Upload failed. Server returned error.");
+        let errDetail = "";
+        try {
+          const errJson = await res.json();
+          errDetail = errJson.detail || JSON.stringify(errJson);
+        } catch {
+          errDetail = await res.text().catch(() => "");
+        }
+        setUploadStatus(`Upload failed: ${res.status} ${errDetail || res.statusText || 'Error'}`);
       }
-    } catch (err) {
-      setUploadStatus("Upload failed due to connection error.");
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setUploadStatus(`Upload failed: ${err?.message || 'Server connection error'}`);
     } finally {
       setUploading(false);
-      setTimeout(() => setUploadStatus(null), 5000);
+      setTimeout(() => setUploadStatus(null), 6000);
     }
   };
 

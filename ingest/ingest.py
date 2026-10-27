@@ -23,12 +23,13 @@ _cached_embed_model: Optional[TextEmbedding] = None
 
 
 def get_embed_model() -> TextEmbedding:
-    """Instantiates and caches a singleton TextEmbedding model."""
+    """Instantiates and caches a singleton TextEmbedding model with low-memory arena config."""
     global _cached_embed_model
     if _cached_embed_model is None:
         _cached_embed_model = TextEmbedding(
             model_name=settings.EMBEDDING_MODEL,
-            threads=1
+            threads=1,
+            extra_session_options={"enable_cpu_mem_arena": False}
         )
     return _cached_embed_model
 
@@ -164,7 +165,7 @@ def run_ingestion(
     print(f"Computing embeddings with '{settings.EMBEDDING_MODEL}'...")
     embed_model = get_embed_model()
     texts = [c.content for c in chunks]
-    embeddings = list(embed_model.embed(texts, batch_size=16))
+    embeddings = list(embed_model.embed(texts, batch_size=4))
     vector_dim = len(embeddings[0])
 
     # 4. Upsert to Qdrant
@@ -189,8 +190,14 @@ def run_ingestion(
         ))
         all_chunks_dump.append(payload)
 
+    # Free raw embedding vectors and text buffers from memory immediately
+    del texts
+    del embeddings
+    import gc
+    gc.collect()
+
     # Batch upsert
-    batch_size = 64
+    batch_size = 32
     for i in range(0, len(points), batch_size):
         batch = points[i:i + batch_size]
         client.upsert(

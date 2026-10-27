@@ -324,6 +324,9 @@ async def query_endpoint(
     return StreamingResponse(sse_event_stream(), media_type="text/event-stream")
 
 
+_ingest_lock = asyncio.Lock()
+
+
 @app.post(
     "/ingest",
     summary="Upload & Index New Documents",
@@ -334,43 +337,44 @@ async def ingest_endpoint(
     api_key: str = Depends(verify_api_key)
 ):
     """Uploads and ingests a document or triggers an idempotent directory rescan."""
-    raw_dir = Path(settings.DATA_RAW_DIR)
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    async with _ingest_lock:
+        raw_dir = Path(settings.DATA_RAW_DIR)
+        raw_dir.mkdir(parents=True, exist_ok=True)
 
-    target_file = None
-    if file and file.filename:
-        safe_filename = Path(file.filename).name
-        file_path = raw_dir / safe_filename
-        content = await file.read()
-        file_path.write_bytes(content)
-        logger.info(f"Saved uploaded document: {safe_filename} ({len(content)} bytes)")
-        target_file = file_path
+        target_file = None
+        if file and file.filename:
+            safe_filename = Path(file.filename).name
+            file_path = raw_dir / safe_filename
+            content = await file.read()
+            file_path.write_bytes(content)
+            logger.info(f"Saved uploaded document: {safe_filename} ({len(content)} bytes)")
+            target_file = file_path
 
-    # Run ingestion job in threadpool so asyncio event loop and health checks are not blocked
-    try:
-        result = await asyncio.to_thread(run_ingestion, target_file=target_file)
-    except Exception as e:
-        logger.exception(f"Ingestion failed for target_file={target_file}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Document ingestion failed: {str(e)}"
+        # Run ingestion job in threadpool so asyncio event loop and health checks are not blocked
+        try:
+            result = await asyncio.to_thread(run_ingestion, target_file=target_file)
+        except Exception as e:
+            logger.exception(f"Ingestion failed for target_file={target_file}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Document ingestion failed: {str(e)}"
+            )
+
+        # Invalidate retriever cache to include newly ingested chunks immediately
+        try:
+            from app.retrieval.pipeline import get_default_retriever
+            retriever = get_default_retriever()
+            if hasattr(retriever, "bm25") and hasattr(retriever.bm25, "_load_and_index"):
+                retriever.bm25._load_and_index()
+        except Exception as e:
+            logger.warning(f"Could not refresh BM25 cache: {e}")
+
+        return IngestResponse(
+            status=result.get("status", "unknown"),
+            processed_files=result.get("processed_files", 0),
+            chunks_indexed=result.get("chunks_indexed", 0),
+            vector_dim=result.get("vector_dim", 384)
         )
-
-    # Invalidate retriever cache to include newly ingested chunks immediately
-    try:
-        from app.retrieval.pipeline import get_default_retriever
-        retriever = get_default_retriever()
-        if hasattr(retriever, "bm25") and hasattr(retriever.bm25, "_load_and_index"):
-            retriever.bm25._load_and_index()
-    except Exception as e:
-        logger.warning(f"Could not refresh BM25 cache: {e}")
-
-    return IngestResponse(
-        status=result.get("status", "unknown"),
-        processed_files=result.get("processed_files", 0),
-        chunks_indexed=result.get("chunks_indexed", 0),
-        vector_dim=result.get("vector_dim", 384)
-    )
 
 
 @app.post(
